@@ -6,6 +6,9 @@ import psycopg2
 import os
 import time
 
+app.mount("/css", StaticFiles(directory="css"), name="css")
+app.mount("/js", StaticFiles(directory="js"), name="js")
+
 app = FastAPI()
 
 # 1. CORS налаштування
