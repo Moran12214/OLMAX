@@ -60,9 +60,17 @@ if os.path.exists("js"):
 async def read_index():
     return FileResponse('index.html')
 
+# Сторінка каталогу (додаємо .html в маршрут для сумісності з кнопками)
+@app.get("/katalog.html")
 @app.get("/katalog")
 async def read_katalog():
     return FileResponse('katalog.html')
+
+# Якщо є сторінка контактів
+@app.get("/kontakt.html")
+@app.get("/kontakt")
+async def read_kontakt():
+    return FileResponse('kontakt.html')
 
 @app.get("/cars")
 def get_cars():
