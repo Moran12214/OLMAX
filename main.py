@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import psycopg2
 import os
 
 app = FastAPI()
@@ -40,7 +41,9 @@ def init_db():
     cur.close()
     conn.close()
 
-init_db()
+@app.on_event("startup")
+def startup():
+    init_db()
 
 # 📦 API
 @app.get("/cars")
