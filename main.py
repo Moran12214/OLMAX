@@ -8,7 +8,7 @@ import time
 
 app = FastAPI()
 
-# CORS налаштування
+# 1. CORS налаштування
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -52,7 +52,25 @@ def init_db():
 def startup():
     init_db()
 
+# 2. ПІДКЛЮЧЕННЯ СТАТИКИ (CSS, JS)
+# Важливо: ці папки повинні бути в репозиторії поруч із main.py
+if os.path.exists("css"):
+    app.mount("/css", StaticFiles(directory="css"), name="css")
+if os.path.exists("js"):
+    app.mount("/js", StaticFiles(directory="js"), name="js")
+
+# 3. МАРШРУТИ ДЛЯ СТОРІНОК (HTML)
 @app.get("/")
+async def read_index():
+    # Тепер при переході на головну відкриється файл, а не текст
+    return FileResponse('index.html')
+
+@app.get("/katalog")
+async def read_katalog():
+    return FileResponse('katalog.html')
+
+# 4. API МАРШРУТИ (ДАНІ)
+@app.get("/status") # Перейменували, щоб не заважало головній сторінці
 def health_check():
     return {"status": "online", "message": "OLMAX API is running"}
 
@@ -77,18 +95,3 @@ def get_cars():
         return cars
     except Exception as e:
         return {"error": str(e)}
-    
-    from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-
-# Дозволяємо серверу бачити папку з твоїми файлами (якщо вони в корені)
-app.mount("/css", StaticFiles(directory="css"), name="css")
-app.mount("/js", StaticFiles(directory="js"), name="js")
-
-@app.get("/")
-async def read_index():
-    return FileResponse('index.html')
-
-@app.get("/katalog")
-async def read_katalog():
-    return FileResponse('katalog.html')
