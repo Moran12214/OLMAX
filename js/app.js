@@ -1,34 +1,41 @@
-const API_URL = 'https://devoted-trust-production.up.railway.app'; 
+// ✅ Правильна адреса бекенду (без зайвих /cars)
+const API_URL = 'https://devoted-trust-production.up.railway.app';
 
-// 🔥 ДОПОМІЖНА ФУНКЦІЯ... (залишається без змін)
+// 🔥 ДОПОМІЖНА ФУНКЦІЯ: Дістає перше фото з масиву галереї
 function getMainImage(imageString) {
     try {
         const parsed = JSON.parse(imageString);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-    } catch (e) {} 
+    } catch (e) {} // Якщо це старе авто (просто лінк), помилка ігнорується
     return imageString || "https://via.placeholder.com/300";
 }
 
 function loadCatalog() {
+    // 1. Визначаємо поточну мову та беремо відповідні переклади
     const lang = localStorage.getItem('selectedLang') || 'pl';
     const t = translations[lang];
 
-    // ✅ ТУТ ТЕЖ ВАЖЛИВО: запит має йти на ${API_URL}/cars
+    // ✅ Запит іде на правильну адресу ${API_URL}/cars
     fetch(`${API_URL}/cars`, {
         headers: {
             'ngrok-skip-browser-warning': 'true'
         }
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(carsArray => {
             const container = document.getElementById('catalog-container') || document.getElementById('cars');
             if (!container) return;
 
             container.innerHTML = '';
 
-            // 2. Використовуємо переклад для повідомлення про порожній каталог
-            if (!carsArray || carsArray.length === 0) {
-                container.innerHTML = `<p style="text-align:center; width:100%; padding: 40px; font-size: 18px; color: #666;">${t.noCars}</p>`;
+            // Перевіряємо, чи отримали ми масив (захист від помилки .reverse)
+            if (!Array.isArray(carsArray) || carsArray.length === 0) {
+                container.innerHTML = `<p style="text-align:center; width:100%; padding: 40px; font-size: 18px; color: #666;">${t.noCars || 'Brak pojazdów'}</p>`;
                 return;
             }
 
@@ -40,7 +47,7 @@ function loadCatalog() {
             container.style.margin = '40px auto';
             container.style.padding = '0 20px';
 
-            // Додали .reverse(), щоб нові авто були першими
+            // Тепер .reverse() працюватиме, бо ми точно знаємо, що це масив
             carsArray.reverse().forEach(car => {
                 const div = document.createElement('div');
 
@@ -66,7 +73,6 @@ function loadCatalog() {
                     div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                 };
 
-                // 3. Змінили src картинки на getMainImage(car.image)
                 div.innerHTML = `
                     <img src="${getMainImage(car.image)}" alt="${car.title}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;" onerror="this.src='https://via.placeholder.com/300x200?text=Brak+zdjęcia'">
                     
@@ -75,11 +81,11 @@ function loadCatalog() {
                     <p style="font-size: 22px; font-weight: bold; color: #e63946; margin: 0 0 12px 0;">${car.price} PLN</p>
                     
                     <div style="color: #555; font-size: 14px; margin-bottom: 20px; line-height: 1.6; border-top: 1px solid #eee; padding-top: 10px; margin-top: auto;">
-                        <span style="display:block;">📅 <strong>${t.year}:</strong> ${car.year || '—'}</span>
-                        <span style="display:block;">🚀 <strong>${t.mileage}:</strong> ${car.mileage || '—'}</span>
+                        <span style="display:block;">📅 <strong>${t.year || 'Rok'}:</strong> ${car.year || '—'}</span>
+                        <span style="display:block;">🚀 <strong>${t.mileage || 'Przebieg'}:</strong> ${car.mileage || '—'}</span>
                     </div>
                     
-                    <button style="width: 100%; background: #111; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.3s;">${t.btnMore}</button>
+                    <button style="width: 100%; background: #111; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.3s;">${t.btnMore || 'Szczegóły'}</button>
                 `;
 
                 container.appendChild(div);
