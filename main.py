@@ -6,12 +6,9 @@ import psycopg2
 import os
 import time
 
-app.mount("/css", StaticFiles(directory="css"), name="css")
-app.mount("/js", StaticFiles(directory="js"), name="js")
-
 app = FastAPI()
 
-# 1. CORS налаштування
+# 1. CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,17 +20,16 @@ app.add_middleware(
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_conn():
-    """Спроби підключення до БД з невеликою затримкою"""
     for i in range(5):
         try:
             return psycopg2.connect(DATABASE_URL)
-        except Exception as e:
-            print(f"Спроба {i+1}: База ще не готова... {e}")
+        except Exception:
             time.sleep(2)
     return psycopg2.connect(DATABASE_URL)
 
-def init_db():
-    """Створення таблиць при старті"""
+@app.on_event("startup")
+def startup():
+    # Створення таблиці, якщо її немає
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
@@ -51,31 +47,22 @@ def init_db():
     cur.close()
     conn.close()
 
-@app.on_event("startup")
-def startup():
-    init_db()
-
-# 2. ПІДКЛЮЧЕННЯ СТАТИКИ (CSS, JS)
-# Важливо: ці папки повинні бути в репозиторії поруч із main.py
+# 2. ПІДКЛЮЧЕННЯ СТАТИКИ
+# Якщо style.css лежить у папці css, цей рядок зробить його доступним
 if os.path.exists("css"):
     app.mount("/css", StaticFiles(directory="css"), name="css")
+
 if os.path.exists("js"):
     app.mount("/js", StaticFiles(directory="js"), name="js")
 
-# 3. МАРШРУТИ ДЛЯ СТОРІНОК (HTML)
+# 3. МАРШРУТИ
 @app.get("/")
 async def read_index():
-    # Тепер при переході на головну відкриється файл, а не текст
     return FileResponse('index.html')
 
 @app.get("/katalog")
 async def read_katalog():
     return FileResponse('katalog.html')
-
-# 4. API МАРШРУТИ (ДАНІ)
-@app.get("/status") # Перейменували, щоб не заважало головній сторінці
-def health_check():
-    return {"status": "online", "message": "OLMAX API is running"}
 
 @app.get("/cars")
 def get_cars():
@@ -84,15 +71,7 @@ def get_cars():
         cur = conn.cursor()
         cur.execute("SELECT id, title, price, image, description, year, mileage FROM cars")
         rows = cur.fetchall()
-        
-        cars = []
-        for row in rows:
-            cars.append({
-                "id": row[0], "title": row[1], "price": row[2], 
-                "image": row[3], "description": row[4], 
-                "year": row[5], "mileage": row[6]
-            })
-        
+        cars = [{"id": r[0], "title": r[1], "price": r[2], "image": r[3], "description": r[4], "year": r[5], "mileage": r[6]} for r in rows]
         cur.close()
         conn.close()
         return cars
