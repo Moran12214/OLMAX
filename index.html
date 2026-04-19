@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLMAX</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header style="display: flex; align-items: center; justify-content: space-between; padding: 15px 5%; box-sizing: border-box;">
+
+    <div style="flex: 1;">
+        <h1 id="hero-h1" style="margin: 0;">OLMAX</h1>
+    </div>
+
+    <nav style="flex: 2; text-align: center;">
+        <a href="index.html" id="nav-home" style="margin: 0 15px;">Główna</a>
+        <a href="katalog.html" id="nav-catalog" style="margin: 0 15px;">Katalog</a>
+        <a href="kontakt.html" id="nav-contact" style="margin: 0 15px;">Kontakt</a>
+    </nav>
+
+    <div class="lang-switcher" style="flex: 1; display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="setLanguage('pl')" style="cursor:pointer; background:none; border:none; font-size:24px; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🇵🇱</button>
+        <button onclick="setLanguage('ua')" style="cursor:pointer; background:none; border:none; font-size:24px; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🇺🇦</button>
+    </div>
+
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <h2 id="txt-hero-title">Sprzedaż samochodów i przyczep</h2>
+        <p id="txt-hero-sub">Profesjonalny komis samochodowy w Polsce</p>
+        <a href="katalog.html" class="btn-primary" id="btn-hero-catalog">Przejdź do katalogu</a>
+    </div>
+</section>
+
+<section class="container features-section">
+    <div class="feature-box">
+        <h3 id="txt-feat-1">✅ Sprawdzone pojazdy</h3>
+        <p id="txt-feat-1-sub">Każdy samochód przechodzi dokładną inspekcję...</p>
+    </div>
+    <div class="feature-box">
+        <h3 id="txt-feat-2">🛡️ Gwarancja</h3>
+        <p id="txt-feat-2-sub">Proste warunki umowy...</p>
+    </div>
+    <div class="feature-box">
+        <h3 id="txt-feat-3">📝 Rejestracja</h3>
+        <p id="txt-feat-3-sub">Pomagamy z formalnościami...</p>
+    </div>
+</section>
+
+<section class="recent-cars-wrapper">
+    <div class="container">
+        <h2 id="latest-h2">Ostatnio dodane pojazdy</h2>
+        <div id="latest-cars">
+        </div>
+    </div>
+</section>
+
+<script src="js/lang.js"></script>
+<script src="js/home.js"></script>
+
+<footer>
+    <p>📍 Kampinos</p>
+    <p>📞 Roman +48 694 219 020</p>
+</footer>
+
+</body>
+</html>

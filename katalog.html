@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katalog samochodów - OLMAX</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Цей код примусово зробить сітку, ігноруючи все інше */
+        #catalog-container {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+            gap: 30px !important;
+            margin-top: 40px;
+            padding: 0 15px;
+        }
+
+        .car-card {
+            display: flex !important;
+            flex-direction: column !important;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 15px;
+            width: 100% !important; /* Забираємо фіксовану ширину, якщо вона десь була */
+            box-sizing: border-box;
+        }
+
+        .car-card img {
+            width: 100% !important;
+            height: 220px !important;
+            object-fit: cover !important;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<header style="display: flex; align-items: center; justify-content: space-between; padding: 15px 5%; box-sizing: border-box;">
+
+    <div style="flex: 1;">
+        <h1 id="hero-h1" style="margin: 0;">OLMAX</h1>
+    </div>
+
+    <nav style="flex: 2; text-align: center;">
+        <a href="index.html" id="nav-home" style="margin: 0 15px;">Główna</a>
+        <a href="katalog.html" id="nav-catalog" style="margin: 0 15px;">Katalog</a>
+        <a href="kontakt.html" id="nav-contact" style="margin: 0 15px;">Kontakt</a>
+    </nav>
+
+    <div class="lang-switcher" style="flex: 1; display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="setLanguage('pl')" style="cursor:pointer; background:none; border:none; font-size:24px; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🇵🇱</button>
+        <button onclick="setLanguage('ua')" style="cursor:pointer; background:none; border:none; font-size:24px; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🇺🇦</button>
+    </div>
+
+</header>
+
+<section class="container" style="padding: 40px 20px; max-width: 1200px; margin: auto;">
+    <h2 data-i18n="nav_catalog" style="font-size: 32px; border-bottom: 2px solid #e63946; display: inline-block; padding-bottom: 10px;">Katalog</h2>
+
+    <div id="catalog-container" class="catalog-grid">
+        <p style="text-align: center; width: 100%; color: #666;">Завантаження автомобілів...</p>
+    </div>
+</section>
+
+<footer style="background: #111; color: white; text-align: center; padding: 20px; margin-top: 50px;">
+    <p>📍 Kampinos | 📞 Roman +48 694 219 020</p>
+    <p>&copy; 2026 OLMAX</p>
+</footer>
+
+<script src="js/lang.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

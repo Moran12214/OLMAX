@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szczegóły pojazdu - OLMAX</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .product-page { padding: 40px 20px; max-width: 1200px; margin: auto; }
+        .back-link { display: inline-block; margin-bottom: 20px; font-weight: bold; color: #111; text-decoration: none; font-size: 16px; transition: 0.3s; }
+        .back-link:hover { color: #e63946; }
+
+        .product-container { display: flex; flex-wrap: wrap; gap: 40px; }
+        .product-image-col { flex: 2; min-width: 300px; }
+        .product-info-col { flex: 1; min-width: 300px; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); height: fit-content; }
+
+        .product-image-col img { width: 100%; border-radius: 12px; object-fit: cover; max-height: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .product-desc { margin-top: 30px; padding: 25px; background: #f8f9fa; border-radius: 12px; line-height: 1.8; font-size: 16px; color: #444; }
+
+        .product-price { font-size: 36px; color: #e63946; font-weight: bold; margin: 15px 0 25px 0; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        .product-specs { list-style: none; padding: 0; margin-bottom: 30px; }
+        .product-specs li { font-size: 18px; padding: 10px 0; border-bottom: 1px solid #eee; color: #555; }
+
+        .order-form input, .order-form textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<header style="display: flex; align-items: center; justify-content: space-between; padding: 15px 5%; box-sizing: border-box;">
+
+    <div style="flex: 1;">
+        <h1 id="hero-h1" style="margin: 0;">OLMAX</h1>
+    </div>
+
+    <nav style="flex: 2; text-align: center;">
+        <a href="index.html" id="nav-home" style="margin: 0 15px;">Główna</a>
+        <a href="katalog.html" id="nav-catalog" style="margin: 0 15px;">Katalog</a>
+        <a href="kontakt.html" id="nav-contact" style="margin: 0 15px;">Kontakt</a>
+    </nav>
+
+    <div class="lang-switcher" style="flex: 1; display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="setLanguage('pl')" style="cursor:pointer; background:none; border:none; font-size:24px; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🇵🇱</button>
+        <button onclick="setLanguage('ua')" style="cursor:pointer; background:none; border:none; font-size:24px; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🇺🇦</button>
+    </div>
+
+</header>
+
+<section class="product-page">
+    <a href="katalog.html" id="product-back" class="back-link">⬅ Powrót do katalogu</a>
+
+    <div id="product-content" class="product-container">
+        <p style="text-align:center; width:100%;">Ładowanie...</p>
+    </div>
+</section>
+
+<footer>
+    <p>📍 Kampinos</p>
+    <p>📞 Roman +48 694 219 020</p>
+</footer>
+
+<script src="js/lang.js"></script>
+<script src="js/product.js"></script>
+</body>
+</html>
