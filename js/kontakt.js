@@ -1,4 +1,4 @@
-const API_URL = 'https://devoted-trust-production.up.railway.app/cars/cars';
+const API_URL = 'https://devoted-trust-production.up.railway.app/kontakt.html';
 
 document.getElementById('contactForm').addEventListener('submit', function(event) {
     event.preventDefault();
