@@ -78,6 +78,18 @@ async def read_kontakt():
 async def read_product():
     return FileResponse('product.html')
 
+from fastapi.responses import FileResponse
+
+# Дозволяємо серверу віддавати файл product.html
+@app.get("/product.html")
+async def read_product_html():
+    return FileResponse('product.html')
+
+# Також додамо варіант без .html для красивих посилань
+@app.get("/product")
+async def read_product_clean():
+    return FileResponse('product.html')
+
 @app.get("/cars")
 def get_cars():
     try:
