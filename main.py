@@ -57,6 +57,7 @@ if os.path.exists("js"):
 
 # 3. МАРШРУТИ
 @app.get("/")
+@app.get("/index.html")
 async def read_index():
     return FileResponse('index.html')
 
