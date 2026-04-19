@@ -1,19 +1,19 @@
-const API_URL = 'https://devoted-trust-production.up.railway.app/cars/cars';
+const API_URL = 'https://devoted-trust-production.up.railway.app'; 
 
-// 🔥 ДОПОМІЖНА ФУНКЦІЯ: Дістає перше фото з масиву галереї
+// 🔥 ДОПОМІЖНА ФУНКЦІЯ... (залишається без змін)
 function getMainImage(imageString) {
     try {
         const parsed = JSON.parse(imageString);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-    } catch (e) {} // Якщо це старе авто (просто лінк), помилка ігнорується
+    } catch (e) {} 
     return imageString || "https://via.placeholder.com/300";
 }
 
 function loadCatalog() {
-    // 1. Визначаємо поточну мову та беремо відповідні переклади
     const lang = localStorage.getItem('selectedLang') || 'pl';
     const t = translations[lang];
 
+    // ✅ ТУТ ТЕЖ ВАЖЛИВО: запит має йти на ${API_URL}/cars
     fetch(`${API_URL}/cars`, {
         headers: {
             'ngrok-skip-browser-warning': 'true'
