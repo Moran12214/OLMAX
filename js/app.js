@@ -1,4 +1,4 @@
-const API_URL = 'https://devoted-trust-production.up.railway.app/cars';
+const API_URL = 'https://devoted-trust-production.up.railway.app/cars/cars';
 
 // 🔥 ДОПОМІЖНА ФУНКЦІЯ: Дістає перше фото з масиву галереї
 function getMainImage(imageString) {

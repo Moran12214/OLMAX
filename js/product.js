@@ -1,4 +1,4 @@
-const API_URL = 'https://devoted-trust-production.up.railway.app/cars';
+const API_URL = 'https://devoted-trust-production.up.railway.app/cars/cars';
 let currentCarTitle = ""; // Зберігаємо назву авто для форми
 
 // 🔥 Функція для зміни головного фото при кліку на мініатюру
