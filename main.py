@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
 import os
 
+conn = psycopg2.connect(os.environ["DATABASE_URL"])
+
 app = FastAPI()
 
 # CORS
