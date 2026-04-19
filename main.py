@@ -73,6 +73,11 @@ async def read_katalog():
 async def read_kontakt():
     return FileResponse('kontakt.html')
 
+@app.get("/product.html")
+@app.get("/product")
+async def read_product():
+    return FileResponse('product.html')
+
 @app.get("/cars")
 def get_cars():
     try:
