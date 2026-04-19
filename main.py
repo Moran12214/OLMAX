@@ -6,7 +6,7 @@ import time
 
 app = FastAPI()
 
-# CORS - дозволяємо запити з будь-яких доменів
+# CORS налаштування
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,18 +18,17 @@ app.add_middleware(
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_conn():
-    # Додаємо невелику затримку та спроби підключення, щоб база встигла прокинутись
-    count = 0
-    while count < 5:
+    """Спроби підключення до БД з невеликою затримкою"""
+    for i in range(5):
         try:
             return psycopg2.connect(DATABASE_URL)
         except Exception as e:
-            print(f"Помилка підключення до БД: {e}. Пробую ще раз...")
+            print(f"Спроба {i+1}: База ще не готова... {e}")
             time.sleep(2)
-            count += 1
-    raise Exception("Не вдалося підключитися до бази даних")
+    return psycopg2.connect(DATABASE_URL)
 
 def init_db():
+    """Створення таблиць при старті"""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
@@ -52,8 +51,8 @@ def startup():
     init_db()
 
 @app.get("/")
-def root():
-    return {"status": "Server is running"}
+def health_check():
+    return {"status": "online", "message": "OLMAX API is running"}
 
 @app.get("/cars")
 def get_cars():
@@ -66,13 +65,9 @@ def get_cars():
         cars = []
         for row in rows:
             cars.append({
-                "id": row[0],
-                "title": row[1],
-                "price": row[2],
-                "image": row[3],
-                "description": row[4],
-                "year": row[5],
-                "mileage": row[6]
+                "id": row[0], "title": row[1], "price": row[2], 
+                "image": row[3], "description": row[4], 
+                "year": row[5], "mileage": row[6]
             })
         
         cur.close()
