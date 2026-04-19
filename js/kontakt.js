@@ -1,4 +1,4 @@
-const API_URL = 'https://olmax-production.up.railway.app';
+const API_URL = 'https://devoted-trust-production.up.railway.app/katalog.html';
 
 document.getElementById('contactForm').addEventListener('submit', function(event) {
     event.preventDefault();

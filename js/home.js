@@ -1,4 +1,4 @@
-const API_URL = 'https://olmax-production.up.railway.app';
+const API_URL = 'https://devoted-trust-production.up.railway.app/katalog.html';
 
 // 🔥 ДОПОМІЖНА ФУНКЦІЯ: Дістає перше фото з масиву галереї
 function getMainImage(imageString) {
