@@ -1,4 +1,4 @@
-const API_URL = 'https://variably-gave-chapter.ngrok-free.dev';
+const API_URL = 'VITE_API_URL=https://olmax-production.up.railway.app';
 
 // Об'єкт із заголовками для Ngrok
 const ngrokHeaders = {
