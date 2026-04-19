@@ -1,4 +1,4 @@
-const API_URL = 'https://devoted-trust-production.up.railway.app/katalog.html';
+const API_URL = 'https://devoted-trust-production.up.railway.app/cars';
 
 // Об'єкт із заголовками для Ngrok
 const ngrokHeaders = {
