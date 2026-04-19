@@ -1,4 +1,4 @@
-const API_URL = 'VITE_API_URL=https://olmax-production.up.railway.app';
+const API_URL = 'https://olmax-production.up.railway.app';
 
 // 🔥 ДОПОМІЖНА ФУНКЦІЯ: Дістає перше фото з масиву галереї
 function getMainImage(imageString) {
