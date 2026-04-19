@@ -75,3 +75,18 @@ def get_cars():
         return cars
     except Exception as e:
         return {"error": str(e)}
+    
+    from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# Дозволяємо серверу бачити папку з твоїми файлами (якщо вони в корені)
+app.mount("/css", StaticFiles(directory="css"), name="css")
+app.mount("/js", StaticFiles(directory="js"), name="js")
+
+@app.get("/")
+async def read_index():
+    return FileResponse('index.html')
+
+@app.get("/katalog")
+async def read_katalog():
+    return FileResponse('katalog.html')
