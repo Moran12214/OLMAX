@@ -90,6 +90,11 @@ async def read_product_html():
 async def read_product_clean():
     return FileResponse('product.html')
 
+@app.get("/admin.html")
+@app.get("/admin")
+async def read_admin():
+    return FileResponse('admin.html')
+
 @app.get("/cars")
 def get_cars():
     try:
