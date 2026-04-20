@@ -53,8 +53,7 @@
             </select>
             
             <input type="text" id="carEngine" placeholder="Об'єм двигуна (н-р: 12.8L)">
-            <input type="file" id="carImages" multiple accept="image/*">
-            <input type="number" id="carYear" placeholder="Рік випуску">
+            <input type="file" id="carImages" multiple accept="image/*"> <input type="number" id="carYear" placeholder="Рік випуску">
             <input type="text" id="carMileage" placeholder="Пробіг">
             <textarea id="carDesc" placeholder="Опис автомобіля..." rows="4"></textarea>
 
@@ -76,11 +75,12 @@
     </div>
 
     <div id="section-leads" class="admin-section" style="display: none;">
-        <h2>Отримані заявки клієнтів</h2>
+        <h2>Отримані заявки</h2>
         <div id="leads-list"></div>
     </div>
 </section>
 
+<script src="js/lang.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>
