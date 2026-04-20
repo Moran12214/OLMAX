@@ -1,10 +1,9 @@
-// ✅ ВИПРАВЛЕНО: Тільки домен, без зайвих /cars/cars
 const API_URL = 'https://devoted-trust-production.up.railway.app';
 let currentCarTitle = ""; 
 
-// 🔥 Функція для зміни головного фото
 window.changeMainImg = function(src, thumbnailElement) {
-    document.getElementById('mainProductImage').src = src;
+    const mainImg = document.getElementById('mainProductImage');
+    if (mainImg) mainImg.src = src;
     document.querySelectorAll('.gallery-thumb').forEach(img => img.style.borderColor = 'transparent');
     if (thumbnailElement) thumbnailElement.style.borderColor = '#e63946';
 };
@@ -21,15 +20,10 @@ function loadProductDetails() {
         return;
     }
 
-    // ✅ Запит тепер іде на правильну адресу ${API_URL}/cars
     fetch(`${API_URL}/cars`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
         .then(r => r.json())
         .then(cars => {
-            // Перевіряємо, чи отримали ми масив
-            if (!Array.isArray(cars)) {
-                console.error("Отримані дані не є масивом:", cars);
-                return;
-            }
+            if (!Array.isArray(cars)) return;
 
             const car = cars.find(c => String(c.id) === String(carId));
             const container = document.getElementById('product-content');
@@ -41,12 +35,13 @@ function loadProductDetails() {
 
             currentCarTitle = car.title;
 
+            // ✅ ВИПРАВЛЕНО: Гнучкий парсинг фото
             let images = [];
             try {
                 images = JSON.parse(car.image);
                 if (!Array.isArray(images)) images = [car.image];
             } catch(e) {
-                images = [car.image];
+                images = car.image ? [car.image] : ["https://via.placeholder.com/800x500?text=Brak+zdjęcia"];
             }
 
             let galleryHTML = '';
@@ -76,6 +71,8 @@ function loadProductDetails() {
                     <ul class="product-specs">
                         <li>📅 <strong>${t.year}:</strong> ${car.year || '—'}</li>
                         <li>🚀 <strong>${t.mileage}:</strong> ${car.mileage || '—'}</li>
+                        <li>⚙️ <strong>${t.transmissionLabel || 'Skrzynia'}:</strong> ${car.transmission || '—'}</li>
+                        <li>🧪 <strong>${t.engineLabel || 'Silnik'}:</strong> ${car.engine_volume || '—'}</li>
                     </ul>
                     <div style="margin-top:40px;">
                         <h3 id="order-h3" style="margin-bottom:20px;">${t.orderTitle}</h3>
@@ -93,45 +90,36 @@ function loadProductDetails() {
         .catch(err => console.error("Помилка завантаження авто:", err));
 }
 
-// Обробка форми
 document.addEventListener('submit', function(event) {
     if (event.target && event.target.id === 'productForm') {
         event.preventDefault();
-
         const lang = localStorage.getItem('selectedLang') || 'pl';
         const msgs = {
             ua: { success: "Заявку відправлено!", err: "Помилка відправки." },
             pl: { success: "Zgłoszenie wysłane!", err: "Błąd wysyłania." }
         };
 
-        const clientMsg = document.getElementById('pMessage').value;
-        const finalMessage = `[Zapytanie o: ${currentCarTitle}]\n${clientMsg}`;
-
         const data = {
             name: document.getElementById('pName').value,
             phone: document.getElementById('pPhone').value,
-            message: finalMessage
+            message: `[Zapytanie o: ${currentCarTitle}]\n${document.getElementById('pMessage').value}`
         };
 
-        // ⚠️ ЗАУВАЖЕННЯ: Тобі потрібно буде додати маршрут /applications у main.py, 
-        // щоб форма реально працювала і зберігала заявки.
         fetch(`${API_URL}/applications`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
-            .then(r => {
-                if (!r.ok) throw new Error('Server error');
-                const statusText = document.getElementById('pStatus');
-                statusText.innerText = msgs[lang].success;
-                statusText.style.color = "#28a745";
-                event.target.reset();
-            })
-            .catch(err => {
-                const statusText = document.getElementById('pStatus');
-                statusText.innerText = msgs[lang].err;
-                statusText.style.color = "#e63946";
-            });
+        .then(r => {
+            if (!r.ok) throw new Error();
+            document.getElementById('pStatus').innerText = msgs[lang].success;
+            document.getElementById('pStatus').style.color = "#28a745";
+            event.target.reset();
+        })
+        .catch(() => {
+            document.getElementById('pStatus').innerText = msgs[lang].err;
+            document.getElementById('pStatus').style.color = "#e63946";
+        });
     }
 });
 
