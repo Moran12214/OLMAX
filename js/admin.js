@@ -1,6 +1,6 @@
 const API_URL = 'https://devoted-trust-production.up.railway.app';
 
-const ngrokHeaders = {
+const headers = {
     'ngrok-skip-browser-warning': 'true',
     'Content-Type': 'application/json'
 };
@@ -19,69 +19,57 @@ function initAdmin() {
 }
 
 function loadStats() {
-    fetch(`${API_URL}/stats`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+    fetch(`${API_URL}/stats`, { headers: headers })
         .then(r => r.json())
-        .then(data => {
-            // Виправлено: тепер назви збігаються з main.py
-            document.getElementById('stat-cars').innerText = data.cars_count || 0;
-            document.getElementById('stat-apps').innerText = data.apps_count || 0;
+        .then(res => {
+            document.getElementById('stat-cars').innerText = res.cars_count || 0;
+            document.getElementById('stat-apps').innerText = res.apps_count || 0;
         })
-        .catch(error => console.error("Error loading stats:", error));
+        .catch(err => console.error("Stats error:", err));
 }
 
 function loadCars() {
-    const lang = localStorage.getItem('selectedLang') || 'pl';
-    const t = translations[lang] || {};
-
-    fetch(`${API_URL}/cars`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+    fetch(`${API_URL}/cars`, { headers: headers })
         .then(r => r.json())
-        .then(data => {
+        .then(cars => {
             const tbody = document.getElementById('adminTableBody');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Baza jest pusta</td></tr>`;
+            if (!cars || cars.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">База порожня</td></tr>';
                 return;
             }
-
-            tbody.innerHTML = data.reverse().map(car => `
+            tbody.innerHTML = cars.reverse().map(car => `
                 <tr>
                     <td>${car.id}</td>
                     <td style="display: flex; align-items: center; gap: 10px;">
                         <img src="${getMainImage(car.image)}" style="width: 50px; height: 35px; object-fit: cover; border-radius: 4px;">
-                        ${car.title}
+                        ${car.title || '---'}
                     </td>
                     <td>${car.price} PLN</td>
                     <td>
-                        <button onclick="deleteCar(${car.id})" style="background:#e63946; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">
-                            Удалить
-                        </button>
+                        <button onclick="deleteCar(${car.id})" style="background:#e63946; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer;">Видалити</button>
                     </td>
                 </tr>
             `).join('');
         })
-        .catch(error => console.error("Error loading cars:", error));
+        .catch(err => console.error("Cars load error:", err));
 }
 
 async function addCar(event) {
-    if (event) event.preventDefault();
-    const lang = localStorage.getItem('selectedLang') || 'pl';
+    event.preventDefault();
     
+    // Отримуємо елементи
     const title = document.getElementById('carTitle').value;
     const price = document.getElementById('carPrice').value;
-    const fileInput = document.getElementById('carImages');
+    const fileInput = document.getElementById('carImages'); // ID виправлено
     const desc = document.getElementById('carDesc').value;
     const year = document.getElementById('carYear').value;
     const mileage = document.getElementById('carMileage').value;
     const transmission = document.getElementById('carTransmission').value;
     const engine = document.getElementById('carEngine').value;
 
-    if (!title || !price) {
-        alert("Заповніть назву та ціну!");
-        return;
-    }
-
     let imagesArray = [];
-    if (fileInput.files.length > 0) {
-        const files = Array.from(fileInput.files).slice(0, 10); // макс 10 фото
+    if (fileInput && fileInput.files.length > 0) {
+        const files = Array.from(fileInput.files).slice(0, 10);
         imagesArray = await Promise.all(files.map(file => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -93,36 +81,34 @@ async function addCar(event) {
         imagesArray = ["https://via.placeholder.com/300"];
     }
 
-    const newCar = {
+    const carData = {
         title: title,
         price: price,
         image: JSON.stringify(imagesArray),
-        description: desc || "Brak opisu",
+        description: desc,
         year: year ? parseInt(year) : 0,
-        mileage: mileage || "0",
+        mileage: mileage,
         transmission: transmission,
         engine_volume: engine
     };
 
     fetch(`${API_URL}/cars`, {
         method: 'POST',
-        headers: ngrokHeaders,
-        body: JSON.stringify(newCar)
+        headers: headers,
+        body: JSON.stringify(carData)
     })
+    .then(r => r.json())
     .then(() => {
-        alert("Sukces!");
-        location.reload(); // Перезавантаження для оновлення списку
+        alert("Авто успішно додано!");
+        location.reload();
     })
-    .catch(err => console.error(err));
+    .catch(err => alert("Помилка при додаванні"));
 }
 
 function deleteCar(id) {
-    if (confirm("Видалити?")) {
-        fetch(`${API_URL}/cars/${id}`, { 
-            method: 'DELETE', 
-            headers: { 'ngrok-skip-browser-warning': 'true' } 
-        }).then(() => initAdmin());
-    }
+    if (!confirm("Видалити?")) return;
+    fetch(`${API_URL}/cars/${id}`, { method: 'DELETE', headers: headers })
+        .then(() => initAdmin());
 }
 
 function showSection(name) {
@@ -134,22 +120,22 @@ function showSection(name) {
 }
 
 function loadApplications() {
-    fetch(`${API_URL}/applications`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+    fetch(`${API_URL}/applications`, { headers: headers })
         .then(r => r.json())
         .then(data => {
-            const container = document.getElementById('leads-list');
+            const list = document.getElementById('leads-list');
             if (!data || data.length === 0) {
-                container.innerHTML = `<p style="text-align:center;">Заявок немає</p>`;
+                list.innerHTML = '<p style="text-align:center;">Заявок немає</p>';
                 return;
             }
-            container.innerHTML = data.reverse().map(app => `
-                <div class="lead-card">
-                    <p><strong>👤 Ім'я:</strong> ${app.name}</p>
-                    <p><strong>📞 Тел:</strong> ${app.phone}</p>
-                    <p><strong>💬 Повідомлення:</strong> ${app.message}</p>
+            list.innerHTML = data.reverse().map(app => `
+                <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border-left:4px solid #e63946;">
+                    <p><strong>👤 ${app.name}</strong> (${app.phone})</p>
+                    <p>💬 ${app.message}</p>
                 </div>
             `).join('');
         });
 }
 
-document.addEventListener('DOMContentLoaded', initAdmin);
+// Запуск при завантаженні
+window.onload = initAdmin;

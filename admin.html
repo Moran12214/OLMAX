@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="admin-page-title">Панель Адміністратора - OLMAX</title>
+    <title>Панель Адміністратора - OLMAX</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .admin-container { max-width: 1000px; margin: 40px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
@@ -14,45 +14,38 @@
         .tab-btn { flex: 1; padding: 15px; background: #f1f1f1; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .tab-btn.active { background: #111; color: white; }
         .admin-form { display: grid; gap: 15px; }
-        .file-upload-wrapper { display: flex; flex-direction: column; gap: 5px; text-align: left; }
-        .file-upload-wrapper label { font-size: 14px; color: #666; font-weight: bold; }
-        .admin-form input, .admin-form textarea, .admin-form select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-        .lang-switcher button { cursor: pointer; background: none; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px; font-size: 18px; transition: 0.3s; }
-        .lang-switcher button:hover { background: #eee; }
+        .admin-form input, .admin-form textarea, .admin-form select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; width: 100%; box-sizing: border-box; }
+        .btn-primary { background: #e63946; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
         .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1 id="admin-h1">OLMAX - ADMIN</h1>
+<header style="padding: 20px; background: #111; color: white; display: flex; justify-content: space-between; align-items: center;">
+    <h1 style="margin: 0; font-size: 24px;">OLMAX ADMIN</h1>
     <nav>
-        <a href="index.html" id="nav-home">Główna</a>
-        <a href="katalog.html" id="nav-catalog">Katalog</a>
+        <a href="index.html" style="color: white; margin-right: 15px; text-decoration: none;">На головну</a>
+        <a href="katalog.html" style="color: white; text-decoration: none;">Каталог</a>
     </nav>
-    <div class="lang-switcher" style="display: flex; gap: 10px; align-items: center;">
-        <button onclick="setLanguage('pl')">🇵🇱 PL</button>
-        <button onclick="setLanguage('ua')">🇺🇦 UA</button>
-    </div>
 </header>
 
 <section class="admin-container">
     <div class="stats-grid">
-        <div class="stat-card"><h3 id="txt-stat-cars">🚗 Авто в базі</h3><p id="stat-cars">0</p></div>
-        <div class="stat-card"><h3 id="txt-stat-apps">📩 Заявки клієнтів</h3><p id="stat-apps">0</p></div>
+        <div class="stat-card"><h3>🚗 Авто в базі</h3><p id="stat-cars">0</p></div>
+        <div class="stat-card"><h3>📩 Заявки клієнтів</h3><p id="stat-apps">0</p></div>
     </div>
 
     <div class="admin-tabs">
-        <button id="btn-catalog" class="tab-btn active" onclick="showSection('catalog')">Управління каталогом</button>
-        <button id="btn-leads" class="tab-btn" onclick="showSection('leads')">Перегляд заявок</button>
+        <button id="btn-catalog" class="tab-btn active" onclick="showSection('catalog')">Керування авто</button>
+        <button id="btn-leads" class="tab-btn" onclick="showSection('leads')">Заявки</button>
     </div>
 
     <div id="section-catalog" class="admin-section">
-        <h2 id="txt-add-title">Додати нове авто</h2>
-        <div class="admin-form">
-            <input type="text" id="carTitle" placeholder="Marka i model">
-            <input type="text" id="carPrice" placeholder="Cena">
+        <h2>Додати автомобіль</h2>
+        <form class="admin-form" onsubmit="addCar(event)">
+            <input type="text" id="carTitle" placeholder="Марка та модель" required>
+            <input type="text" id="carPrice" placeholder="Ціна (PLN)" required>
             
             <select id="carTransmission">
                 <option value="Manualna">Механіка (Manualna)</option>
@@ -60,40 +53,34 @@
             </select>
             
             <input type="text" id="carEngine" placeholder="Об'єм двигуна (н-р: 12.8L)">
+            <input type="file" id="carImages" multiple accept="image/*">
+            <input type="number" id="carYear" placeholder="Рік випуску">
+            <input type="text" id="carMileage" placeholder="Пробіг">
+            <textarea id="carDesc" placeholder="Опис автомобіля..." rows="4"></textarea>
 
-            <div class="file-upload-wrapper">
-                <label for="carImages" id="label-upload">Завантажити фото (можна кілька): </label>
-                <input type="file" id="carImages" multiple accept="image/*">
-            </div>
+            <button type="submit" class="btn-primary">+ ЗБЕРЕГТИ АВТОМОБІЛЬ</button>
+        </form>
 
-            <input type="number" id="carYear" placeholder="Rok">
-            <input type="text" id="carMileage" placeholder="Przebieg">
-            <textarea id="carDesc" placeholder="Opis..." rows="3"></textarea>
-
-            <button type="button" id="btn-add-submit" onclick="addCar(event)" class="btn-primary" style="width: 100%;">+ Dodaj auto</button>
-        </div>
-
-        <h2 id="txt-list-title" style="margin-top: 40px;">Список автомобілів</h2>
+        <h2 style="margin-top: 40px;">Список автомобілів</h2>
         <table class="admin-table">
             <thead>
-            <tr>
-                <th>ID</th>
-                <th>Marka</th>
-                <th>Cena</th>
-                <th>Akcja</th>
-            </tr>
+                <tr>
+                    <th>ID</th>
+                    <th>Назва</th>
+                    <th>Ціна</th>
+                    <th>Дія</th>
+                </tr>
             </thead>
             <tbody id="adminTableBody"></tbody>
         </table>
     </div>
 
     <div id="section-leads" class="admin-section" style="display: none;">
-        <h2 id="txt-leads-title">Отримані заявки</h2>
+        <h2>Отримані заявки клієнтів</h2>
         <div id="leads-list"></div>
     </div>
 </section>
 
-<script src="js/lang.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>
