@@ -1,49 +1,116 @@
-
-from fastapi import FastAPI, UploadFile, File, Form
-from typing import List
-import json, os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import psycopg2
+import os
+import time
 
 app = FastAPI()
 
-cars = []
+# 1. CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.post("/cars")
-async def create_car(
-    title: str = Form(...),
-    price: str = Form(...),
-    year: str = Form(...),
-    mileage: str = Form(...),
-    description: str = Form(...),
-    transmission: str = Form(...),
-    engine_volume: str = Form(...),
-    images: List[UploadFile] = File(...)
-):
-    image_urls = []
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-    os.makedirs("uploads", exist_ok=True)
+def get_conn():
+    for i in range(5):
+        try:
+            return psycopg2.connect(DATABASE_URL)
+        except Exception:
+            time.sleep(2)
+    return psycopg2.connect(DATABASE_URL)
 
-    for img in images[:15]:
-        file_path = f"uploads/{img.filename}"
-        with open(file_path, "wb") as buffer:
-            buffer.write(await img.read())
-        image_urls.append(file_path)
+@app.on_event("startup")
+def startup():
+    # Створення таблиці з новими полями
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS cars (
+            id SERIAL PRIMARY KEY,
+            title TEXT,
+            price TEXT,
+            image TEXT,       -- Тут ми будемо зберігати JSON-масив посилань на фото
+            description TEXT,
+            year INTEGER,
+            mileage TEXT,
+            transmission TEXT, -- Нове поле: Коробка передач
+            engine_volume TEXT -- Нове поле: Об'єм двигуна
+        )
+    """)
+    
+    cur.execute("ALTER TABLE cars ADD COLUMN IF NOT EXISTS transmission TEXT")
+    cur.execute("ALTER TABLE cars ADD COLUMN IF NOT EXISTS engine_volume TEXT")
+    
+    conn.commit()
+    cur.close()
+    conn.close()
 
-    new_car = {
-        "id": len(cars) + 1,
-        "title": title,
-        "price": price,
-        "year": year,
-        "mileage": mileage,
-        "description": description,
-        "transmission": transmission,
-        "engine_volume": engine_volume,
-        "image": json.dumps(image_urls)
-    }
+# 2. ПІДКЛЮЧЕННЯ СТАТИКИ
+# Якщо style.css лежить у папці css, цей рядок зробить його доступним
+if os.path.exists("css"):
+    app.mount("/css", StaticFiles(directory="css"), name="css")
 
-    cars.append(new_car)
+if os.path.exists("js"):
+    app.mount("/js", StaticFiles(directory="js"), name="js")
 
-    os.makedirs("data", exist_ok=True)
-    with open("data/cars.json", "w") as f:
-        json.dump(cars, f, indent=4)
+# 3. МАРШРУТИ
+@app.get("/")
+@app.get("/index.html")
+async def read_index():
+    return FileResponse('index.html')
 
-    return {"status": "ok"}
+# Сторінка каталогу (додаємо .html в маршрут для сумісності з кнопками)
+@app.get("/katalog.html")
+@app.get("/katalog")
+async def read_katalog():
+    return FileResponse('katalog.html')
+
+# Якщо є сторінка контактів
+@app.get("/kontakt.html")
+@app.get("/kontakt")
+async def read_kontakt():
+    return FileResponse('kontakt.html')
+
+@app.get("/product.html")
+@app.get("/product")
+async def read_product():
+    return FileResponse('product.html')
+
+from fastapi.responses import FileResponse
+
+# Дозволяємо серверу віддавати файл product.html
+@app.get("/product.html")
+async def read_product_html():
+    return FileResponse('product.html')
+
+# Також додамо варіант без .html для красивих посилань
+@app.get("/product")
+async def read_product_clean():
+    return FileResponse('product.html')
+
+@app.get("/admin.html")
+@app.get("/admin")
+async def read_admin():
+    return FileResponse('admin.html')
+
+@app.get("/cars")
+def get_cars():
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, price, image, description, year, mileage FROM cars")
+        rows = cur.fetchall()
+        cars = [{"id": r[0], "title": r[1], "price": r[2], "image": r[3], "description": r[4], "year": r[5], "mileage": r[6]} for r in rows]
+        cur.close()
+        conn.close()
+        return cars
+    except Exception as e:
+        return {"error": str(e)}
