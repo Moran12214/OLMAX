@@ -29,7 +29,7 @@ def get_conn():
 
 @app.on_event("startup")
 def startup():
-    # Створення таблиці, якщо її немає
+    # Створення таблиці з новими полями
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
@@ -37,12 +37,18 @@ def startup():
             id SERIAL PRIMARY KEY,
             title TEXT,
             price TEXT,
-            image TEXT,
+            image TEXT,       -- Тут ми будемо зберігати JSON-масив посилань на фото
             description TEXT,
             year INTEGER,
-            mileage TEXT
+            mileage TEXT,
+            transmission TEXT, -- Нове поле: Коробка передач
+            engine_volume TEXT -- Нове поле: Об'єм двигуна
         )
     """)
+    
+    cur.execute("ALTER TABLE cars ADD COLUMN IF NOT EXISTS transmission TEXT")
+    cur.execute("ALTER TABLE cars ADD COLUMN IF NOT EXISTS engine_volume TEXT")
+    
     conn.commit()
     cur.close()
     conn.close()
