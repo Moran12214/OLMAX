@@ -58,7 +58,7 @@
 
             <div class="file-upload-wrapper">
                 <label for="carImage" id="label-upload">Завантажити фото: </label>
-                <input type="file" id="carImage" accept="image/*" multiple>
+                <input type="file" id="carImages" multiple accept="image/*" id="carImage" accept="image/*" multiple>
             </div>
 
             <input type="number" id="carYear" placeholder="Rok">
@@ -92,3 +92,10 @@
 <script src="js/admin.js"></script>
 </body>
 </html>
+<div>
+    <select id="transmission">
+        <option value="Автомат">Автомат</option>
+        <option value="Механіка">Механіка</option>
+    </select>
+    <input type="text" id="engineVolume" placeholder="Обʼєм двигуна (наприклад 2.0)">
+</div>
