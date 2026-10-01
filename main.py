@@ -63,6 +63,8 @@ def init_db():
         conn.execute('PRAGMA journal_mode=WAL')
         conn.execute('CREATE TABLE IF NOT EXISTS cars (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, price TEXT, image TEXT, description TEXT, year INTEGER, mileage TEXT)')
         conn.execute('CREATE TABLE IF NOT EXISTS applications (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, phone TEXT, message TEXT, date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+        if 'category' not in {r['name'] for r in conn.execute('PRAGMA table_info(cars)')}:
+            conn.execute("ALTER TABLE cars ADD COLUMN category TEXT NOT NULL DEFAULT 'other'")
         for table, column, definition in [('cars', 'status', "TEXT NOT NULL DEFAULT 'published'"), ('applications', 'status', "TEXT NOT NULL DEFAULT 'new'"), ('applications', 'car_id', 'INTEGER')]:
             if column not in {r['name'] for r in conn.execute(f'PRAGMA table_info({table})')}:
                 conn.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
@@ -269,6 +271,14 @@ class Car(BaseModel):
     mileage: str = Field(default='', max_length=20)
     images: list[str] = Field(default_factory=list, max_length=8)
     status: str = 'draft'
+    category: str = 'other'
+
+    @field_validator('category')
+    @classmethod
+    def valid_category(cls, value):
+        if value not in {'passenger', 'truck', 'trailer', 'other'}:
+            raise ValueError('Invalid vehicle category')
+        return value
 
     @field_validator('title', 'description', 'mileage', 'price')
     @classmethod
@@ -333,13 +343,13 @@ def save_car(data, car_id=None):
     images = [store_image(x) for x in data.images]
     if data.status == 'published' and (not images or not data.description.strip() or data.year is None):
         raise HTTPException(422, 'Add a photo, year and description before publishing')
-    values = (data.title, data.price, json.dumps(images), data.description, data.year, data.mileage, data.status)
+    values = (data.title, data.price, json.dumps(images), data.description, data.year, data.mileage, data.status, data.category)
     with connection() as conn:
         if car_id is None:
-            cursor = conn.execute('INSERT INTO cars (title,price,image,description,year,mileage,status) VALUES (?,?,?,?,?,?,?)', values)
+            cursor = conn.execute('INSERT INTO cars (title,price,image,description,year,mileage,status,category) VALUES (?,?,?,?,?,?,?,?)', values)
             car_id = cursor.lastrowid
         else:
-            cursor = conn.execute('UPDATE cars SET title=?,price=?,image=?,description=?,year=?,mileage=?,status=? WHERE id=?', (*values, car_id))
+            cursor = conn.execute('UPDATE cars SET title=?,price=?,image=?,description=?,year=?,mileage=?,status=?,category=? WHERE id=?', (*values, car_id))
             if not cursor.rowcount:
                 raise HTTPException(404, 'Car not found')
     return {'id': car_id, 'status': data.status}

@@ -172,7 +172,7 @@ function openEditor(car) {
   editingId = car?.id ?? null;
   editImages = [...(car?.images || [])];
   document.getElementById("editor").innerHTML =
-    `<form class="panel editor"><h2 data-t="${car ? "editCar" : "add"}"></h2><div class="form-grid"><label class="span-all"><span data-t="title"></span> *<input name="title" minlength="2" maxlength="140" required></label><label><span data-t="price"></span> (PLN) *<input name="price" type="number" min="0.01" max="999999999.99" step="0.01" required></label><label><span data-t="year"></span><input name="year" type="number" min="1900" max="${new Date().getFullYear() + 2}"></label><label><span data-t="mileage"></span> (km)<input name="mileage" type="number" min="0" max="999999999" step="1"></label><label><span data-t="status"></span><select name="status">${["draft", "published", "sold"].map((s) => `<option value="${s}" data-t="${s}"></option>`).join("")}</select></label><label class="span-all"><span data-t="description"></span><textarea name="description" rows="6" maxlength="10000"></textarea></label><div class="span-all"><label><span data-t="photos"></span><input id="photos" type="file" multiple accept="image/jpeg,image/png,image/webp"></label><p class="small" data-t="photosHint"></p><div id="upload-grid" class="upload-grid"></div><div class="url-row"><label><span data-t="photoURL"></span><input id="photo-url" type="url" placeholder="https://"></label><button id="add-url" class="button secondary" type="button" data-t="addURL"></button></div></div></div><p class="small" data-t="publishHint"></p><p class="form-status" role="status"></p><div class="actions"><button class="button primary" type="submit" data-t="save"></button><button class="button secondary" id="cancel-edit" type="button" data-t="cancel"></button></div></form>`;
+    `<form class="panel editor"><h2 data-t="${car ? "editCar" : "add"}"></h2><div class="form-grid"><label class="span-all"><span data-t="title"></span> *<input name="title" minlength="2" maxlength="140" required></label><label><span data-t="price"></span> (PLN) *<input name="price" type="number" min="0.01" max="999999999.99" step="0.01" required></label><label><span data-t="year"></span><input name="year" type="number" min="1900" max="${new Date().getFullYear() + 2}"></label><label><span data-t="mileage"></span> (km)<input name="mileage" type="number" min="0" max="999999999" step="1"></label><label><span data-t="category"></span><select name="category">${["passenger", "truck", "trailer", "other"].map((s) => `<option value="${s}" data-t="${s}"></option>`).join("")}</select></label><label><span data-t="status"></span><select name="status">${["draft", "published", "sold"].map((s) => `<option value="${s}" data-t="${s}"></option>`).join("")}</select></label><label class="span-all"><span data-t="description"></span><textarea name="description" rows="6" maxlength="10000"></textarea></label><div class="span-all"><label><span data-t="photos"></span><input id="photos" type="file" multiple accept="image/jpeg,image/png,image/webp"></label><p class="small" data-t="photosHint"></p><div id="upload-grid" class="upload-grid"></div><div class="url-row"><label><span data-t="photoURL"></span><input id="photo-url" type="url" placeholder="https://"></label><button id="add-url" class="button secondary" type="button" data-t="addURL"></button></div></div></div><p class="small" data-t="publishHint"></p><p class="form-status" role="status"></p><div class="actions"><button class="button primary" type="submit" data-t="save"></button><button class="button secondary" id="cancel-edit" type="button" data-t="cancel"></button></div></form>`;
   const form = document.querySelector("#editor form");
   for (const field of [
     "title",
@@ -181,9 +181,10 @@ function openEditor(car) {
     "mileage",
     "description",
     "status",
+    "category",
   ])
     form.elements[field].value =
-      car?.[field] ?? (field === "status" ? "draft" : "");
+      car?.[field] ?? (field === "status" ? "draft" : field === "category" ? "other" : "");
   document.getElementById("cancel-edit").onclick = () => {
     document.getElementById("editor").innerHTML = "";
   };

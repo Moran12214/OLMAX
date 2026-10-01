@@ -133,3 +133,18 @@ def test_sessions_expire(client):
     with main.connection() as conn:
         conn.execute('UPDATE sessions SET expires=0')
     assert client.get('/api/admin/session').status_code == 401
+
+
+def test_vehicle_categories_preserve_existing_records(client):
+    headers = authenticate(client)
+    assert all(c['category'] == 'other' for c in client.get('/api/cars').json())
+    data = {'title': 'Category test', 'price': '1000', 'category': 'truck'}
+    response = client.post('/api/admin/cars', json=data, headers=headers)
+    assert response.status_code == 201
+    car_id = response.json()['id']
+    main.init_db()
+    saved = next(c for c in client.get('/api/admin/cars').json() if c['id'] == car_id)
+    assert saved['category'] == 'truck'
+    assert client.put(f'/api/admin/cars/{car_id}', json={**data, 'category': 'trailer'}, headers=headers).status_code == 200
+    assert client.post('/api/admin/cars', json={**data, 'category': 'invalid'}, headers=headers).status_code == 422
+    assert next(c for c in client.get('/api/admin/cars').json() if c['id'] == car_id)['category'] == 'trailer'

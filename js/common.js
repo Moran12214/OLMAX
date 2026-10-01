@@ -67,7 +67,7 @@ function installImageFallback(root = document) {
 }
 function header() {
   document.querySelector("header").innerHTML =
-    `<div class="header-inner"><a class="brand" href="/" aria-label="OLMAX">OLMAX<span></span></a><nav aria-label="Menu"><a href="/" data-t="home"></a><a href="/katalog.html" data-t="catalog"></a><a href="/kontakt.html" data-t="contact"></a></nav><div class="header-actions"><div class="languages" aria-label="Language"><button data-language="pl" aria-label="Polski">PL</button><button data-language="ua" aria-label="Українська">UA</button></div><a class="phone-link" href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.phoneDisplay)}</a></div></div>`;
+    `<div class="header-inner"><a class="brand" href="/" aria-label="OLMAX"><img src="/assets/logo.svg" alt="OLMAX" width="240" height="54"></a><nav aria-label="Menu"><a href="/" data-t="home"></a><a href="/katalog.html" data-t="catalog"></a><a href="/#about" data-t="about"></a><a href="/kontakt.html" data-t="contact"></a></nav><div class="header-actions"><div class="languages" aria-label="Language"><button data-language="pl" aria-label="Polski">PL</button><button data-language="ua" aria-label="Українська">UA</button></div><a class="phone-link" href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.phoneDisplay)}</a></div></div>`;
   document
     .querySelectorAll("[data-language]")
     .forEach((el) => (el.onclick = () => setLanguage(el.dataset.language)));
@@ -80,7 +80,7 @@ function header() {
       el.setAttribute("aria-current", "page");
   });
   document.querySelector("footer").innerHTML =
-    `<div class="footer-inner"><div><a class="brand" href="/">OLMAX<span></span></a><p data-t="footer"></p></div><div class="footer-links"><a href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.contact)} · ${escapeHTML(siteConfig.phoneDisplay)}</a><a href="/privacy.html" data-t="privacy"></a><a href="/admin.html" data-t="admin"></a></div></div>`;
+    `<div class="footer-inner"><div><a class="brand" href="/"><img src="/assets/logo-light.svg" alt="OLMAX" width="240" height="54"></a><p data-t="footer"></p></div><div class="footer-links"><a href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.contact)} · ${escapeHTML(siteConfig.phoneDisplay)}</a><a href="/privacy.html" data-t="privacy"></a><a href="/admin.html" data-t="admin"></a></div></div>`;
   translate();
 }
 function carCard(car) {
@@ -139,5 +139,6 @@ api("/config")
   .then((config) => {
     siteConfig = config;
     header();
+    document.dispatchEvent(new Event("siteconfigchange"));
   })
   .catch(() => {});
