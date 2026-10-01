@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    # Caddy is the only entry point; the app port is not published.
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--forwarded-allow-ips", "*"]
+    environment:
+      DATA_DIR: /data
+      PUBLIC_ORIGIN: https://olmax.net.pl
+      COOKIE_SECURE: "true"
+    volumes:
+      - olmax_data:/data
+    networks:
+      - olmax
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - olmax
+    depends_on:
+      - app
+networks:
+  olmax:
+volumes:
+  olmax_data:
+  caddy_data:
+  caddy_config:
