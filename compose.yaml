@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     env_file: .env
     # Caddy is the only entry point; the app port is not published.
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--forwarded-allow-ips", "*"]
+    command: ["python", "tools/serve.py"]
     environment:
       DATA_DIR: /data
       PUBLIC_ORIGIN: https://olmax.net.pl
