@@ -1,103 +1,46 @@
-// ✅ Правильна адреса бекенду (без зайвих /cars)
-const API_URL = 'https://devoted-trust-production.up.railway.app';
-
-// 🔥 ДОПОМІЖНА ФУНКЦІЯ: Дістає перше фото з масиву галереї
-function getMainImage(imageString) {
-    try {
-        const parsed = JSON.parse(imageString);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-    } catch (e) {} // Якщо це старе авто (просто лінк), помилка ігнорується
-    return imageString || "https://via.placeholder.com/300";
+document.querySelector("main").innerHTML =
+  `<section class="container section"><p class="eyebrow">OLMAX / KAMPINOS</p><div class="section-heading"><h1 data-t="catalog"></h1><span id="count" class="small" role="status"></span></div><div class="catalog-filters"><label><span data-t="search"></span><input id="search" type="search" data-ph="searchPlaceholder"></label><label><span data-t="maxPrice"></span><input id="max-price" type="number" min="0" inputmode="decimal"></label><label><span data-t="sort"></span><select id="sort"><option value="newest" data-t="newest"></option><option value="priceAsc" data-t="priceAsc"></option><option value="priceDesc" data-t="priceDesc"></option></select></label><button class="button secondary" id="reset-filters" data-t="resetFilters"></button></div><div id="catalog-container" class="car-grid"><p data-t="loading"></p></div></section>`;
+let catalogCars = [];
+function drawCatalog() {
+  const query = document
+    .getElementById("search")
+    .value.trim()
+    .toLocaleLowerCase();
+  const price = document.getElementById("max-price").value;
+  const sort = document.getElementById("sort").value;
+  let cars = catalogCars.filter(
+    (c) =>
+      (c.title + " " + c.description).toLocaleLowerCase().includes(query) &&
+      (!price || Number(c.price) <= Number(price)),
+  );
+  if (sort !== "newest")
+    cars.sort(
+      (a, b) =>
+        (Number(a.price) - Number(b.price)) * (sort === "priceAsc" ? 1 : -1),
+    );
+  document.getElementById("count").textContent =
+    t("offerCount") + ": " + cars.length;
+  document.getElementById("catalog-container").innerHTML = cars.length
+    ? cars.map(carCard).join("")
+    : `<p class="empty-state">${t(catalogCars.length ? "noResults" : "noCars")}</p>`;
+  installImageFallback();
 }
-
-function loadCatalog() {
-    // 1. Визначаємо поточну мову та беремо відповідні переклади
-    const lang = localStorage.getItem('selectedLang') || 'pl';
-    const t = translations[lang];
-
-    // ✅ Запит іде на правильну адресу ${API_URL}/cars
-    fetch(`${API_URL}/cars`, {
-        headers: {
-            'ngrok-skip-browser-warning': 'true'
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(carsArray => {
-            const container = document.getElementById('catalog-container') || document.getElementById('cars');
-            if (!container) return;
-
-            container.innerHTML = '';
-
-            // Перевіряємо, чи отримали ми масив (захист від помилки .reverse)
-            if (!Array.isArray(carsArray) || carsArray.length === 0) {
-                container.innerHTML = `<p style="text-align:center; width:100%; padding: 40px; font-size: 18px; color: #666;">${t.noCars || 'Brak pojazdów'}</p>`;
-                return;
-            }
-
-            // Налаштування сітки контейнера
-            container.style.display = 'grid';
-            container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))';
-            container.style.gap = '30px';
-            container.style.maxWidth = '1200px';
-            container.style.margin = '40px auto';
-            container.style.padding = '0 20px';
-
-            // Тепер .reverse() працюватиме, бо ми точно знаємо, що це масив
-            carsArray.reverse().forEach(car => {
-                const div = document.createElement('div');
-
-                // Стилі картки
-                div.style.display = 'flex';
-                div.style.flexDirection = 'column';
-                div.style.background = '#fff';
-                div.style.borderRadius = '12px';
-                div.style.padding = '15px';
-                div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-                div.style.cursor = 'pointer';
-                div.style.transition = 'transform 0.3s, box-shadow 0.3s';
-                div.style.overflow = 'hidden';
-
-                div.onclick = () => location.href = `product.html?id=${car.id}`;
-
-                div.onmouseover = () => {
-                    div.style.transform = 'translateY(-8px)';
-                    div.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)';
-                };
-                div.onmouseout = () => {
-                    div.style.transform = 'translateY(0)';
-                    div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-                };
-
-                div.innerHTML = `
-                    <img src="${getMainImage(car.image)}" alt="${car.title}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;" onerror="this.src='https://via.placeholder.com/300x200?text=Brak+zdjęcia'">
-                    
-                    <h3 style="margin: 0 0 8px 0; font-size: 20px; color: #111; font-family: Arial, sans-serif;">${car.title}</h3>
-                    
-                    <p style="font-size: 22px; font-weight: bold; color: #e63946; margin: 0 0 12px 0;">${car.price} PLN</p>
-                    
-                    <div style="color: #555; font-size: 14px; margin-bottom: 20px; line-height: 1.6; border-top: 1px solid #eee; padding-top: 10px; margin-top: auto;">
-                        <span style="display:block;">📅 <strong>${t.year || 'Rok'}:</strong> ${car.year || '—'}</span>
-                        <span style="display:block;">🚀 <strong>${t.mileage || 'Przebieg'}:</strong> ${car.mileage || '—'}</span>
-                    </div>
-                    
-                    <button style="width: 100%; background: #111; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.3s;">${t.btnMore || 'Szczegóły'}</button>
-                `;
-
-                container.appendChild(div);
-            });
-        })
-        .catch(error => {
-            console.error("Помилка завантаження каталогу:", error);
-            const container = document.getElementById('catalog-container') || document.getElementById('cars');
-            if (container) {
-                container.innerHTML = '<p style="text-align:center; color: red; padding: 20px;">Помилка підключення до сервера.</p>';
-            }
-        });
+async function loadCatalog() {
+  try {
+    catalogCars = await api("/cars");
+    drawCatalog();
+  } catch {
+    errorState(document.getElementById("catalog-container"), loadCatalog);
+  }
 }
-
-document.addEventListener('DOMContentLoaded', loadCatalog);
+for (const id of ["search", "max-price", "sort"])
+  document.getElementById(id).addEventListener("input", drawCatalog);
+document.getElementById("reset-filters").onclick = () => {
+  document.getElementById("search").value = "";
+  document.getElementById("max-price").value = "";
+  document.getElementById("sort").value = "newest";
+  drawCatalog();
+};
+document.addEventListener("languagechange", drawCatalog);
+translate();
+loadCatalog();
