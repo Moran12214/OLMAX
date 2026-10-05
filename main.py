@@ -36,7 +36,7 @@ DB = DATA / 'cars.db'
 MEDIA = DATA / 'media'
 COOKIE_SECURE = os.getenv('COOKIE_SECURE', 'false').lower() == 'true'
 PUBLIC_ORIGIN = os.getenv('PUBLIC_ORIGIN', '').rstrip('/')
-MAX_BODY = 56 * 1024 * 1024  # eight 5 MB photos, base64 overhead and form fields
+MAX_BODY = 56 * 1024 * 1024  # photos are uploaded individually; listings contain up to 50 stored URLs
 Image.MAX_IMAGE_PIXELS = 24_000_000
 
 
@@ -70,6 +70,9 @@ def init_db():
                 conn.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
                 if table == 'cars':
                     conn.execute("UPDATE cars SET status='draft' WHERE lower(trim(title)) IN ('test','тест','demo')")
+        for field in ['transmission', 'fuel_type', 'consumption_city', 'consumption_highway']:
+            if field not in {r['name'] for r in conn.execute('PRAGMA table_info(cars)')}:
+                conn.execute(f"ALTER TABLE cars ADD COLUMN {field} TEXT NOT NULL DEFAULT ''")
         conn.execute('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, csrf TEXT NOT NULL, expires REAL NOT NULL)')
         conn.execute('CREATE TABLE IF NOT EXISTS rate_limits (bucket TEXT PRIMARY KEY, count INTEGER NOT NULL, expires REAL NOT NULL)')
         conn.execute('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)')
@@ -269,8 +272,35 @@ class Car(BaseModel):
     description: str = Field(default='', max_length=10000)
     year: int | None = Field(default=None, ge=1900, le=datetime.now().year+2)
     mileage: str = Field(default='', max_length=20)
-    images: list[str] = Field(default_factory=list, max_length=8)
+    images: list[str] = Field(default_factory=list, max_length=50)
     status: str = 'draft'
+    transmission: str = Field(default='', max_length=40)
+    fuel_type: str = Field(default='', max_length=40)
+    consumption_city: str = Field(default='', max_length=10)
+    consumption_highway: str = Field(default='', max_length=10)
+
+    @field_validator('transmission')
+    @classmethod
+    def transmission_valid(cls, value):
+        if value not in {'', 'manual', 'automatic', 'cvt', 'robot', 'other'}:
+            raise ValueError('Invalid transmission')
+        return value
+
+    @field_validator('fuel_type')
+    @classmethod
+    def fuel_valid(cls, value):
+        if value not in {'', 'petrol', 'diesel', 'lpg', 'hybrid', 'plugin', 'electric', 'other'}:
+            raise ValueError('Invalid fuel type')
+        return value
+
+    @field_validator('consumption_city', 'consumption_highway')
+    @classmethod
+    def consumption_valid(cls, value):
+        value = value.replace(',', '.')
+        if value and (not re.fullmatch(r'\d{1,3}(?:\.\d{1,2})?', value) or not 0 <= float(value) <= 200):
+            raise ValueError('Consumption must be between 0 and 200')
+        return value
+
     category: str = 'other'
 
     @field_validator('category')
@@ -339,17 +369,26 @@ def store_image(value):
         raise HTTPException(422, 'Cannot read image')
 
 
+class ImageUpload(BaseModel):
+    image: str = Field(max_length=7 * 1024 * 1024)
+
+
+@app.post('/api/admin/images', status_code=201)
+def upload_image(data: ImageUpload, auth=Depends(admin)):
+    return {'url': store_image(data.image)}
+
+
 def save_car(data, car_id=None):
     images = [store_image(x) for x in data.images]
     if data.status == 'published' and (not images or not data.description.strip() or data.year is None):
         raise HTTPException(422, 'Add a photo, year and description before publishing')
-    values = (data.title, data.price, json.dumps(images), data.description, data.year, data.mileage, data.status, data.category)
+    values = (data.title, data.price, json.dumps(images), data.description, data.year, data.mileage, data.status, data.category, data.transmission, data.fuel_type, data.consumption_city, data.consumption_highway)
     with connection() as conn:
         if car_id is None:
-            cursor = conn.execute('INSERT INTO cars (title,price,image,description,year,mileage,status,category) VALUES (?,?,?,?,?,?,?,?)', values)
+            cursor = conn.execute('INSERT INTO cars (title,price,image,description,year,mileage,status,category,transmission,fuel_type,consumption_city,consumption_highway) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', values)
             car_id = cursor.lastrowid
         else:
-            cursor = conn.execute('UPDATE cars SET title=?,price=?,image=?,description=?,year=?,mileage=?,status=?,category=? WHERE id=?', (*values, car_id))
+            cursor = conn.execute('UPDATE cars SET title=?,price=?,image=?,description=?,year=?,mileage=?,status=?,category=?,transmission=?,fuel_type=?,consumption_city=?,consumption_highway=? WHERE id=?', (*values, car_id))
             if not cursor.rowcount:
                 raise HTTPException(404, 'Car not found')
     return {'id': car_id, 'status': data.status}

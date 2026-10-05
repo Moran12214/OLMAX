@@ -1,3 +1,4 @@
+let uploadingPhotos = false;
 const adminRoot = document.querySelector("main");
 let csrf = "",
   adminCars = [],
@@ -160,6 +161,7 @@ function drawAdmin() {
   }
 }
 function openEditor(car) {
+  if (uploadingPhotos) return;
   if (
     document.querySelector("#editor form") &&
     !confirm(
@@ -172,7 +174,7 @@ function openEditor(car) {
   editingId = car?.id ?? null;
   editImages = [...(car?.images || [])];
   document.getElementById("editor").innerHTML =
-    `<form class="panel editor"><h2 data-t="${car ? "editCar" : "add"}"></h2><div class="form-grid"><label class="span-all"><span data-t="title"></span> *<input name="title" minlength="2" maxlength="140" required></label><label><span data-t="price"></span> (PLN) *<input name="price" type="number" min="0.01" max="999999999.99" step="0.01" required></label><label><span data-t="year"></span><input name="year" type="number" min="1900" max="${new Date().getFullYear() + 2}"></label><label><span data-t="mileage"></span> (km)<input name="mileage" type="number" min="0" max="999999999" step="1"></label><label><span data-t="category"></span><select name="category">${["passenger", "truck", "trailer", "other"].map((s) => `<option value="${s}" data-t="${s}"></option>`).join("")}</select></label><label><span data-t="status"></span><select name="status">${["draft", "published", "sold"].map((s) => `<option value="${s}" data-t="${s}"></option>`).join("")}</select></label><label class="span-all"><span data-t="description"></span><textarea name="description" rows="6" maxlength="10000"></textarea></label><div class="span-all"><label><span data-t="photos"></span><input id="photos" type="file" multiple accept="image/jpeg,image/png,image/webp"></label><p class="small" data-t="photosHint"></p><div id="upload-grid" class="upload-grid"></div><div class="url-row"><label><span data-t="photoURL"></span><input id="photo-url" type="url" placeholder="https://"></label><button id="add-url" class="button secondary" type="button" data-t="addURL"></button></div></div></div><p class="small" data-t="publishHint"></p><p class="form-status" role="status"></p><div class="actions"><button class="button primary" type="submit" data-t="save"></button><button class="button secondary" id="cancel-edit" type="button" data-t="cancel"></button></div></form>`;
+    `<form class="panel editor"><h2 data-t="${car ? "editCar" : "add"}"></h2><div class="form-grid"><label class="span-all"><span data-t="title"></span> *<input name="title" minlength="2" maxlength="140" required></label><label><span data-t="price"></span> (PLN) *<input name="price" type="number" min="0.01" max="999999999.99" step="0.01" required></label><label><span data-t="year"></span><input name="year" type="number" min="1900" max="${new Date().getFullYear() + 2}"></label><label><span data-t="mileage"></span> (km)<input name="mileage" type="number" min="0" max="999999999" step="1"></label><label><span data-t="category"></span><select name="category">${["passenger", "truck", "trailer", "other"].map((s) => `<option value="${s}" data-t="${s}"></option>`).join("")}</select></label><label><span data-t="status"></span><select name="status">${["draft", "published", "sold"].map((s) => `<option value="${s}" data-t="${s}"></option>`).join("")}</select></label><label><span data-t="transmission"></span><select name="transmission"><option value="" data-t="unspecified"></option>${["manual","automatic","cvt","robot","other"].map(v=>`<option value="${v}" data-t="${v}"></option>`).join("")}</select></label><label><span data-t="fuel_type"></span><select name="fuel_type"><option value="" data-t="unspecified"></option>${["petrol","diesel","lpg","hybrid","plugin","electric","other"].map(v=>`<option value="${v}" data-t="${v}"></option>`).join("")}</select></label>${["consumption_city","consumption_highway"].map(v=>`<label><span data-t="${v}"></span><small class="consumption-unit"></small><input name="${v}" type="number" min="0" max="200" step="0.01"></label>`).join("")}<label class="span-all"><span data-t="description"></span><textarea name="description" rows="6" maxlength="10000"></textarea></label><div class="span-all"><label><span data-t="photos"></span><input id="photos" type="file" multiple accept="image/jpeg,image/png,image/webp"></label><p class="small" data-t="photosHint"></p><div id="upload-grid" class="upload-grid"></div><div class="url-row"><label><span data-t="photoURL"></span><input id="photo-url" type="url" placeholder="https://"></label><button id="add-url" class="button secondary" type="button" data-t="addURL"></button></div></div></div><p class="small" data-t="publishHint"></p><p class="form-status" role="status"></p><div class="actions"><button class="button primary" type="submit" data-t="save"></button><button class="button secondary" id="cancel-edit" type="button" data-t="cancel"></button></div></form>`;
   const form = document.querySelector("#editor form");
   for (const field of [
     "title",
@@ -182,9 +184,16 @@ function openEditor(car) {
     "description",
     "status",
     "category",
+    "transmission",
+    "fuel_type",
+    "consumption_city",
+    "consumption_highway",
   ])
     form.elements[field].value =
       car?.[field] ?? (field === "status" ? "draft" : field === "category" ? "other" : "");
+  const updateConsumptionUnit = () => form.querySelectorAll('.consumption-unit').forEach(el => el.textContent = form.elements.fuel_type.value === 'electric' ? 'kWh / 100 km' : 'l / 100 km');
+  form.elements.fuel_type.onchange = updateConsumptionUnit;
+  updateConsumptionUnit();
   document.getElementById("cancel-edit").onclick = () => {
     document.getElementById("editor").innerHTML = "";
   };
@@ -192,7 +201,7 @@ function openEditor(car) {
     const files = [...e.target.files],
       status = form.querySelector("[role=status]");
     if (
-      editImages.length + files.length > 8 ||
+      editImages.length + files.length > 50 ||
       files.some(
         (f) =>
           !["image/jpeg", "image/png", "image/webp"].includes(f.type) ||
@@ -204,23 +213,26 @@ function openEditor(car) {
       e.target.value = "";
       return;
     }
+    uploadingPhotos = true;
+    document.querySelectorAll('#logout,#add-car,[data-tab],#cancel-edit').forEach(el=>el.disabled=true);
+    drawUploads();
     const submit = form.querySelector("[type=submit]");
+    document.getElementById("add-url").disabled = true;
     submit.disabled = true;
     e.target.disabled = true;
     try {
-      const images = await Promise.all(
-        files.map(
-          (file) =>
-            new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            }),
-        ),
-      );
-      editImages.push(...images);
-      drawUploads();
+      for (const [index, file] of files.entries()) {
+        status.textContent = `${t("uploading")} ${index + 1} / ${files.length}`;
+        const image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const result = await authApi('/images', {method: 'POST', body: JSON.stringify({image})});
+        editImages.push(result.url);
+        drawUploads();
+      }
       status.textContent = "";
     } catch {
       status.textContent = t("invalidImages");
@@ -228,13 +240,17 @@ function openEditor(car) {
       submit.disabled = false;
       e.target.disabled = false;
       e.target.value = "";
+      document.getElementById("add-url").disabled = false;
+      uploadingPhotos = false;
+      document.querySelectorAll('#logout,#add-car,[data-tab],#cancel-edit').forEach(el=>el.disabled=false);
+      drawUploads();
     }
   };
   document.getElementById("add-url").onclick = () => {
     const input = document.getElementById("photo-url");
     try {
       const url = new URL(input.value);
-      if (url.protocol !== "https:" || editImages.length >= 8) throw Error();
+      if (url.protocol !== "https:" || editImages.length >= 50) throw Error();
       editImages.push(url.href);
       input.value = "";
       drawUploads();
@@ -244,6 +260,7 @@ function openEditor(car) {
   };
   form.onsubmit = async (e) => {
     e.preventDefault();
+    if (uploadingPhotos) return;
     const data = Object.fromEntries(new FormData(form));
     delete data[""];
     data.year = data.year ? Number(data.year) : null;
@@ -288,6 +305,7 @@ function drawUploads() {
         `<div class="upload-item"><img src="${escapeHTML(src)}" alt="${t("photos")} ${i + 1}"><button type="button" data-cover="${i}" ${i === 0 ? "disabled" : ""}>${t("makeCover")}</button><button type="button" data-remove="${i}">${t("remove")}</button></div>`,
     )
     .join("");
+  if (uploadingPhotos) root.querySelectorAll("button").forEach(el=>el.disabled=true);
   root.querySelectorAll("[data-remove]").forEach(
     (b) =>
       (b.onclick = () => {

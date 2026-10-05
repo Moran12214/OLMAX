@@ -148,3 +148,43 @@ def test_vehicle_categories_preserve_existing_records(client):
     assert client.put(f'/api/admin/cars/{car_id}', json={**data, 'category': 'trailer'}, headers=headers).status_code == 200
     assert client.post('/api/admin/cars', json={**data, 'category': 'invalid'}, headers=headers).status_code == 422
     assert next(c for c in client.get('/api/admin/cars').json() if c['id'] == car_id)['category'] == 'trailer'
+
+
+def test_vehicle_specs_and_fifty_photos(client):
+    headers = authenticate(client)
+    data = {'title': 'New specifications', 'price': '25000', 'year': 2020,
+            'description': 'Complete description', 'status': 'published',
+            'transmission': 'automatic', 'fuel_type': 'diesel',
+            'consumption_city': '9,5', 'consumption_highway': '6.25',
+            'images': [f'https://example.com/{i}.jpg' for i in range(50)]}
+    response = client.post('/api/admin/cars', json=data, headers=headers)
+    assert response.status_code == 201, response.text
+    car_id = response.json()['id']
+    saved = client.get(f'/api/cars/{car_id}').json()
+    assert len(saved['images']) == 50
+    assert saved['transmission'] == 'automatic' and saved['fuel_type'] == 'diesel'
+    assert saved['consumption_city'] == '9.5' and saved['consumption_highway'] == '6.25'
+    main.init_db()
+    assert client.get(f'/api/cars/{car_id}').json() == saved
+    for patch in [{'images': data['images'] + ['https://example.com/extra.jpg']},
+                  {'fuel_type': 'invalid'}, {'transmission': 'invalid'},
+                  {'consumption_city': '-1'}, {'consumption_highway': 'NaN'}]:
+        assert client.put(f'/api/admin/cars/{car_id}', json={**data, **patch}, headers=headers).status_code == 422
+    cleared = {**data, 'transmission': '', 'fuel_type': '', 'consumption_city': '', 'consumption_highway': ''}
+    assert client.put(f'/api/admin/cars/{car_id}', json=cleared, headers=headers).status_code == 200
+    assert client.get(f'/api/cars/{car_id}').json()['consumption_city'] == ''
+
+
+def test_separate_image_upload_is_protected_and_reusable(client):
+    payload = {'image': image_data()}
+    assert client.post('/api/admin/images', json=payload).status_code == 401
+    headers = authenticate(client)
+    assert client.post('/api/admin/images', json=payload).status_code == 403
+    result = client.post('/api/admin/images', json=payload, headers=headers)
+    assert result.status_code == 201
+    url = result.json()['url']
+    assert client.get(url).status_code == 200
+    response = client.post('/api/admin/cars', json={'title': '50 uploaded photos', 'price': '1000', 'images': [url]*50}, headers=headers)
+    assert response.status_code == 201
+    car = next(c for c in client.get('/api/admin/cars').json() if c['id'] == response.json()['id'])
+    assert len(car['images']) == 50
