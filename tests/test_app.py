@@ -188,3 +188,48 @@ def test_separate_image_upload_is_protected_and_reusable(client):
     assert response.status_code == 201
     car = next(c for c in client.get('/api/admin/cars').json() if c['id'] == response.json()['id'])
     assert len(car['images']) == 50
+
+
+def test_description_translation_cache_and_edit(client, monkeypatch):
+    headers = authenticate(client)
+    payload = {'title': 'Translation car', 'price': '15000', 'year': 2020, 'status': 'published', 'description': 'Авто в хорошому стані', 'images': ['https://example.com/car.jpg']}
+    car_id = client.post('/api/admin/cars', headers=headers, json=payload).json()['id']
+    calls = []
+    def fake(text, source, target):
+        calls.append((text, source, target))
+        return 'Samochód w dobrym stanie'
+    monkeypatch.setattr(main, 'translate_segment', fake)
+    url = f'/api/cars/{car_id}/description'
+    assert client.get(url+'?lang=uk').json()['description'] == payload['description']
+    assert not calls
+    assert client.get(url+'?lang=pl').json()['description'] == 'Samochód w dobrym stanie'
+    assert client.get(url+'?lang=pl').json()['translated']
+    assert len(calls) == 1
+    assert client.get(url+'?lang=de').status_code == 422
+    payload['description'] += '.'
+    client.put(f'/api/admin/cars/{car_id}', headers=headers, json=payload)
+    client.get(url+'?lang=pl')
+    assert len(calls) == 2
+    payload['status'] = 'draft'
+    client.put(f'/api/admin/cars/{car_id}', headers=headers, json=payload)
+    assert client.get(url+'?lang=pl').status_code == 404
+
+
+def test_translation_failure_and_utf8_chunks(client, monkeypatch):
+    headers = authenticate(client)
+    payload = {'title': 'Translation fallback', 'price': '15000', 'year': 2020, 'status': 'published', 'description': 'Авто без пошкоджень', 'images': ['https://example.com/car.jpg']}
+    car_id = client.post('/api/admin/cars', headers=headers, json=payload).json()['id']
+    calls = []
+    def unavailable(*args):
+        calls.append(args)
+        raise TimeoutError()
+    monkeypatch.setattr(main, 'translate_segment', unavailable)
+    url = f'/api/cars/{car_id}/description?lang=pl'
+    for _ in range(2):
+        result = client.get(url).json()
+        assert result == {'description': payload['description'], 'translated': False, 'available': False}
+    assert len(calls) == 1
+    text = 'Автомобіль ' * 160 + '\n\n' + 'ї' * 800
+    chunks = list(main.translation_chunks(text))
+    assert ''.join(part for part, _ in chunks) == text
+    assert all(len(part.encode()) <= 500 for part, translate in chunks if translate)

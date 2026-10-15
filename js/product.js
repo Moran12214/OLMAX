@@ -11,8 +11,29 @@ async function loadProduct() {
     const car = await api("/cars/" + productId);
     document.title = car.title + " — OLMAX";
     const images = car.images.length ? car.images : ["/assets/no-photo.svg"];
-    root.innerHTML = `<div class="product-layout"><div><div class="main-photo photo-stage" tabindex="0" role="group" aria-label="${t('gallery')}"><button class="photo-open" type="button" aria-label="${t('openPhoto')}"><img id="main-photo" src="${escapeHTML(images[0])}" alt="${escapeHTML(car.title)}"><span class="photo-expand" aria-hidden="true">⛶</span></button><button class="photo-prev gallery-arrow" type="button" aria-label="${t('previousPhoto')}">‹</button><button class="photo-next gallery-arrow" type="button" aria-label="${t('nextPhoto')}">›</button><span class="photo-count" aria-live="polite"></span></div><div class="gallery" role="group" aria-label="${t("gallery")}">${images.map((src, i) => `<button class="thumb" data-index="${i}" aria-label="${t("photos")} ${i + 1}" aria-pressed="${i === 0}"><img src="${escapeHTML(src)}" alt="${escapeHTML(car.title)} — ${i + 1}" loading="lazy"></button>`).join("")}</div><article class="description panel"><h2 data-t="description"></h2><p>${escapeHTML(car.description || t("noDescription"))}</p></article></div><div><div class="product-details panel"><p class="eyebrow">OLMAX / KAMPINOS</p><h1>${escapeHTML(car.title)}</h1><p class="product-price" id="product-price">${escapeHTML(money(car.price))}</p><dl class="specs"><div><dt data-t="year"></dt><dd>${escapeHTML(car.year || "—")}</dd></div><div><dt data-t="mileage"></dt><dd>${escapeHTML(distance(car.mileage))}</dd></div>${['transmission','fuel_type','consumption_city','consumption_highway'].map(key=>`<div><dt data-t="${key}"></dt><dd data-spec="${key}"></dd></div>`).join('')}</dl><a class="button primary wide" href="tel:${escapeHTML(siteConfig.phone)}"><span data-t="call"></span> · ${escapeHTML(siteConfig.phoneDisplay)}</a></div><div class="panel inquiry"><h2 data-t="ask"></h2>${requestForm("product-form")}</div></div></div>`;
+    root.innerHTML = `<div class="product-layout"><div><div class="main-photo photo-stage" tabindex="0" role="group" aria-label="${t('gallery')}"><button class="photo-open" type="button" aria-label="${t('openPhoto')}"><img id="main-photo" src="${escapeHTML(images[0])}" alt="${escapeHTML(car.title)}"><span class="photo-expand" aria-hidden="true">⛶</span></button><button class="photo-prev gallery-arrow" type="button" aria-label="${t('previousPhoto')}">‹</button><button class="photo-next gallery-arrow" type="button" aria-label="${t('nextPhoto')}">›</button><span class="photo-count" aria-live="polite"></span></div><div class="gallery" role="group" aria-label="${t("gallery")}">${images.map((src, i) => `<button class="thumb" data-index="${i}" aria-label="${t("photos")} ${i + 1}" aria-pressed="${i === 0}"><img src="${escapeHTML(src)}" alt="${escapeHTML(car.title)} — ${i + 1}" loading="lazy"></button>`).join("")}</div><article class="description panel"><h2 data-t="description"></h2><p id="car-description">${escapeHTML(car.description || t("noDescription"))}</p><p id="translation-status" class="small" role="status"></p></article></div><div><div class="product-details panel"><p class="eyebrow">OLMAX / KAMPINOS</p><h1>${escapeHTML(car.title)}</h1><p class="product-price" id="product-price">${escapeHTML(money(car.price))}</p><dl class="specs"><div><dt data-t="year"></dt><dd>${escapeHTML(car.year || "—")}</dd></div><div><dt data-t="mileage"></dt><dd>${escapeHTML(distance(car.mileage))}</dd></div>${['transmission','fuel_type','consumption_city','consumption_highway'].map(key=>`<div><dt data-t="${key}"></dt><dd data-spec="${key}"></dd></div>`).join('')}</dl><a class="button primary wide" href="tel:${escapeHTML(siteConfig.phone)}"><span data-t="call"></span> · ${escapeHTML(siteConfig.phoneDisplay)}</a></div><div class="panel inquiry"><h2 data-t="ask"></h2>${requestForm("product-form")}</div></div></div>`;
     setupGallery(root, images, car.title);
+    let descriptionRequest = 0;
+    const descriptions = new Map();
+    async function drawDescription() {
+      const request = ++descriptionRequest, lang = language === 'ua' ? 'uk' : 'pl';
+      const text = document.getElementById('car-description');
+      const status = document.getElementById('translation-status');
+      text.textContent = car.description || t('noDescription');
+      status.textContent = car.description ? t('translating') : '';
+      if (!car.description) return;
+      try {
+        const result = descriptions.get(lang) || await api(`/cars/${car.id}/description?lang=${lang}`);
+        if (result.available) descriptions.set(lang, result);
+        if (request !== descriptionRequest) return;
+        text.textContent = result.description;
+        status.textContent = !result.available ? t('translationUnavailable') : result.translated ? t('automaticTranslation') : '';
+      } catch {
+        if (request === descriptionRequest) status.textContent = t('translationUnavailable');
+      }
+    }
+    document.addEventListener('languagechange', drawDescription);
+    drawDescription();
     const drawSpecs = () => {
       root.querySelectorAll('[data-spec]').forEach(el => {
         const key = el.dataset.spec, value = car[key];

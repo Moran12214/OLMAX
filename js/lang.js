@@ -220,6 +220,13 @@ const copy = {
     "Перевір формат, розмір і кількість фото.",
   ],
 };
+Object.assign(copy, {
+  lightTheme: ['Włącz jasny motyw', 'Увімкнути світлу тему'],
+  darkTheme: ['Włącz ciemny motyw', 'Увімкнути темну тему'],
+  translating: ['Tłumaczenie opisu…', 'Перекладаємо опис…'],
+  automaticTranslation: ['Tłumaczenie automatyczne', 'Автоматичний переклад'],
+  translationUnavailable: ['Tłumaczenie chwilowo niedostępne. Wyświetlamy oryginał.', 'Переклад тимчасово недоступний. Показуємо оригінал.']
+});
 let language = "pl";
 try {
   if (localStorage.getItem("selectedLang") === "ua") language = "ua";

@@ -12,6 +12,10 @@ import re
 import secrets
 import sqlite3
 import time
+import threading
+from html import unescape
+from urllib.request import urlopen
+from urllib.parse import urlencode
 from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
@@ -73,6 +77,7 @@ def init_db():
         for field in ['transmission', 'fuel_type', 'consumption_city', 'consumption_highway']:
             if field not in {r['name'] for r in conn.execute('PRAGMA table_info(cars)')}:
                 conn.execute(f"ALTER TABLE cars ADD COLUMN {field} TEXT NOT NULL DEFAULT ''")
+        conn.execute('CREATE TABLE IF NOT EXISTS translations (cache_key TEXT PRIMARY KEY, text TEXT NOT NULL, retry_after REAL NOT NULL DEFAULT 0)')
         conn.execute('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, csrf TEXT NOT NULL, expires REAL NOT NULL)')
         conn.execute('CREATE TABLE IF NOT EXISTS rate_limits (bucket TEXT PRIMARY KEY, count INTEGER NOT NULL, expires REAL NOT NULL)')
         conn.execute('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)')
@@ -257,6 +262,87 @@ def car_detail(car_id: int):
     if not row:
         raise HTTPException(404, 'Car not found')
     return public_car(row, full=True)
+
+
+# Only published descriptions are sent for translation; cached by content and language.
+translation_lock = threading.Lock()
+
+
+def translate_segment(text, source, target):
+    query = urlencode({'q': text, 'langpair': f'{source}|{target}'})
+    with urlopen('https://api.mymemory.translated.net/get?' + query, timeout=8) as response:
+        data = json.load(response)
+    result = data.get('responseData', {}).get('translatedText')
+    if str(data.get('responseStatus')) != '200' or data.get('quotaFinished') or not isinstance(result, str) or not result.strip():
+        raise ValueError('Translation unavailable')
+    return unescape(result)
+
+
+def translation_chunks(text):
+    # Keep line breaks and whitespace, splitting on word boundaries within 500 UTF-8 bytes.
+    for line in re.split(r'(\n+)', text):
+        if not line.strip():
+            yield line, False
+            continue
+        while line:
+            chunk = line.encode('utf-8')[:480].decode('utf-8', errors='ignore')
+            if len(chunk) < len(line):
+                boundary = chunk.rfind(' ')
+                if boundary > 0:
+                    chunk = chunk[:boundary + 1]
+            yield chunk, True
+            line = line[len(chunk):]
+
+
+@app.get('/api/cars/{car_id}/description')
+def translated_description(car_id: int, lang: str, request: Request):
+    if lang not in {'pl', 'uk'}:
+        raise HTTPException(422, 'Unsupported language')
+    car = car_detail(car_id)
+    original = car.get('description') or ''
+    # The catalog accepts Polish and Ukrainian descriptions.
+    source = 'uk' if re.search('[а-яА-ЯіІїЇєЄґҐ]', original) else 'pl'
+    if source == lang or not original.strip():
+        return {'description': original, 'translated': False, 'available': True}
+    key = hashlib.sha256((source + lang + original).encode()).hexdigest()
+    def cached():
+        with connection() as conn:
+            row = conn.execute('SELECT * FROM translations WHERE cache_key=?', (key,)).fetchone()
+        if row and row['text']:
+            return {'description': row['text'], 'translated': True, 'available': True}
+        if row and row['retry_after'] > time.time():
+            return {'description': original, 'translated': False, 'available': False}
+    result = cached()
+    if result:
+        return result
+    limit(request, 'translation', 20, 60)
+    if not translation_lock.acquire(timeout=1):
+        raise HTTPException(503, 'Translation busy', headers={'Retry-After': '3'})
+    try:
+        result = cached()
+        if result:
+            return result
+        parts = []
+        deadline = time.monotonic() + 25
+        for chunk, needs_translation in translation_chunks(original):
+            if time.monotonic() > deadline:
+                raise TimeoutError('Translation timed out')
+            if needs_translation:
+                leading = chunk[:len(chunk)-len(chunk.lstrip())]
+                trailing = chunk[len(chunk.rstrip()):]
+                parts.append(leading + translate_segment(chunk.strip(), source, lang).strip() + trailing)
+            else:
+                parts.append(chunk)
+        text = ''.join(parts)
+        with connection() as conn:
+            conn.execute('INSERT OR REPLACE INTO translations VALUES (?, ?, 0)', (key, text))
+        return {'description': text, 'translated': True, 'available': True}
+    except (OSError, ValueError, KeyError, TypeError):
+        with connection() as conn:
+            conn.execute('INSERT OR REPLACE INTO translations VALUES (?, ?, ?)', (key, '', time.time()+60))
+        return {'description': original, 'translated': False, 'available': False}
+    finally:
+        translation_lock.release()
 
 
 @app.get('/api/admin/cars')

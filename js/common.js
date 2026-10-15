@@ -1,3 +1,19 @@
+let theme = 'light';
+try { theme = localStorage.getItem('olmaxTheme') === 'dark' ? 'dark' : 'light'; } catch {}
+document.documentElement.dataset.theme = theme;
+function applyTheme() {
+  document.documentElement.dataset.theme = theme;
+  const button = document.getElementById('theme-toggle');
+  if (button) {
+    button.textContent = theme === 'dark' ? '☀' : '☾';
+    button.setAttribute('aria-label', t(theme === 'dark' ? 'lightTheme' : 'darkTheme'));
+    button.title = button.getAttribute('aria-label');
+    button.setAttribute('aria-pressed', String(theme === 'dark'));
+  }
+  const logo = document.querySelector('header .brand img');
+  if (logo) logo.src = theme === 'dark' ? '/assets/logo-light.svg' : '/assets/logo.svg';
+}
+document.addEventListener('languagechange', applyTheme);
 const escapeHTML = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -67,10 +83,16 @@ function installImageFallback(root = document) {
 }
 function header() {
   document.querySelector("header").innerHTML =
-    `<div class="header-inner"><a class="brand" href="/" aria-label="OLMAX"><img src="/assets/logo.svg" alt="OLMAX" width="240" height="54"></a><nav aria-label="Menu"><a href="/" data-t="home"></a><a href="/katalog.html" data-t="catalog"></a><a href="/#about" data-t="about"></a><a href="/kontakt.html" data-t="contact"></a></nav><div class="header-actions"><div class="languages" aria-label="Language"><button data-language="pl" aria-label="Polski">PL</button><button data-language="ua" aria-label="Українська">UA</button></div><a class="phone-link" href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.phoneDisplay)}</a></div></div>`;
+    `<div class="header-inner"><a class="brand" href="/" aria-label="OLMAX"><img src="/assets/logo.svg" alt="OLMAX" width="240" height="54"></a><nav aria-label="Menu"><a href="/" data-t="home"></a><a href="/katalog.html" data-t="catalog"></a><a href="/#about" data-t="about"></a><a href="/kontakt.html" data-t="contact"></a></nav><div class="header-actions"><button id="theme-toggle" class="theme-toggle" type="button"></button><div class="languages" aria-label="Language"><button data-language="pl" aria-label="Polski">PL</button><button data-language="ua" aria-label="Українська">UA</button></div><a class="phone-link" href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.phoneDisplay)}</a></div></div>`;
   document
     .querySelectorAll("[data-language]")
     .forEach((el) => (el.onclick = () => setLanguage(el.dataset.language)));
+  document.getElementById('theme-toggle').onclick = () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('olmaxTheme', theme); } catch {}
+    applyTheme();
+  };
+  applyTheme();
   const current = location.pathname;
   document.querySelectorAll("nav a").forEach((el) => {
     if (

@@ -1111,3 +1111,18 @@ footer { background: #171b1c; border-color: #333; color: #c9ceca; }
 .photo-lightbox .photo-count { bottom:18px; }
 body.gallery-open { overflow:hidden; }
 @media(max-width:650px) { .photo-lightbox { padding:64px 8px; }.photo-lightbox .gallery-arrow { top:auto; bottom:16px; transform:none; }.photo-lightbox .photo-count { bottom:27px; }.gallery-arrow { width:40px; height:46px; }.consumption-unit { font-size:12px; } }
+
+/* Persistent light / dark appearance. Images retain their original colors. */
+.theme-toggle { width:38px; height:38px; flex-shrink:0; padding:0; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--ink); font-size:25px; line-height:1; }
+:root[data-theme="dark"] { color-scheme:dark; --ink:#f1f2f3; --muted:#b5bac0; --paper:#111416; --line:#3d4348; --red:#eb5554; }
+[data-theme="dark"] header,[data-theme="dark"] .panel,[data-theme="dark"] .car-card,[data-theme="dark"] .category-card,[data-theme="dark"] .catalog-filters,[data-theme="dark"] .admin-car,[data-theme="dark"] .lead-card,[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea,[data-theme="dark"] .upload-item button,[data-theme="dark"] .button.secondary { background:#1c2125; color:var(--ink); border-color:var(--line); }
+[data-theme="dark"] .service-strip,[data-theme="dark"] .offer-empty,[data-theme="dark"] .main-photo,[data-theme="dark"] .card-image,[data-theme="dark"] .thumb,[data-theme="dark"] .category-image { background:#252b30; }
+[data-theme="dark"] .languages button { color:var(--ink); }
+[data-theme="dark"] .languages button[aria-pressed="true"],[data-theme="dark"] .admin-tabs button[aria-pressed="true"] { background:#f1f2f3; color:#151719; }
+[data-theme="dark"] .badge { background:#323a41; color:#f1f2f3; }
+[data-theme="dark"] .badge.published,[data-theme="dark"] .badge.new { background:#193d2c; color:#9de8ba; }
+[data-theme="dark"] .badge.sold { background:#30394e; color:#d5dff9; }
+[data-theme="dark"] .form-status.error { color:#ff9c99; }
+#car-description { white-space:pre-wrap; overflow-wrap:anywhere; }
+#translation-status:empty { display:none; }
+@media(max-width:600px) { .header-actions { gap:6px; } .theme-toggle { width:32px; height:34px; } }
