@@ -19,7 +19,7 @@ from urllib.parse import urlencode
 from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -145,7 +145,7 @@ async def security_headers(request, call_next):
         'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
     })
     if request.url.path == '/' or request.url.path.endswith('.html'):
-        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Cache-Control'] = 'no-store'
     if request.url.path.startswith('/api/admin') or request.url.path == '/admin.html':
         response.headers['Cache-Control'] = 'no-store'
         response.headers['X-Robots-Tag'] = 'noindex, nofollow'
@@ -592,9 +592,20 @@ def health():
 
 
 PAGES = {'index.html', 'katalog.html', 'kontakt.html', 'product.html', 'admin.html', 'privacy.html'}
+PAGE_VERSION = '20261015-brand2'
+
+
+def serve_page(request: Request, page: str):
+    if request.query_params.get('v') != PAGE_VERSION:
+        target = request.url.include_query_params(v=PAGE_VERSION)
+        # Use a relative Location, preserving vehicle IDs and catalog filters.
+        return RedirectResponse(target.path + '?' + target.query, status_code=307)
+    return FileResponse(ROOT/page)
+
+
 @app.get('/')
-def homepage():
-    return FileResponse(ROOT/'index.html')
+def homepage(request: Request):
+    return serve_page(request, 'index.html')
 
 
 @app.get('/robots.txt')
@@ -603,10 +614,10 @@ def robots():
 
 
 @app.get('/{page}')
-def html_page(page: str):
+def html_page(page: str, request: Request):
     if page not in PAGES:
         raise HTTPException(404, 'Page not found')
-    return FileResponse(ROOT/page)
+    return serve_page(request, page)
 
 
 for directory in ['css', 'js', 'assets']:

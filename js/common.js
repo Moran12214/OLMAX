@@ -1,3 +1,22 @@
+// Keep internal navigation on the current release, including cached browser history.
+const pageVersion = '20261015-brand2';
+const sitePages = new Set(['/', '/index.html', '/katalog.html', '/kontakt.html', '/product.html', '/admin.html', '/privacy.html']);
+document.addEventListener('click', (event) => {
+  const anchor = event.target.closest('a[href]');
+  if (!anchor) return;
+  const url = new URL(anchor.href, location.href);
+  if (url.origin === location.origin && sitePages.has(url.pathname)) {
+    url.searchParams.set('v', pageVersion);
+    anchor.href = url.href;
+  }
+});
+window.addEventListener('pageshow', () => {
+  const url = new URL(location.href);
+  if (sitePages.has(url.pathname) && url.searchParams.get('v') !== pageVersion) {
+    url.searchParams.set('v', pageVersion);
+    location.replace(url.href);
+  }
+});
 let theme = window.olmaxTheme.read();
 function applyTheme() {
   theme = window.olmaxTheme.apply(window.olmaxTheme.read());

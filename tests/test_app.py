@@ -233,3 +233,21 @@ def test_translation_failure_and_utf8_chunks(client, monkeypatch):
     chunks = list(main.translation_chunks(text))
     assert ''.join(part for part, _ in chunks) == text
     assert all(len(part.encode()) <= 500 for part, translate in chunks if translate)
+
+
+def test_page_redirect_keeps_filters_and_prevents_stale_cache(client):
+    for path in ['/', '/katalog.html?category=truck', '/kontakt.html', '/product.html?id=2', '/admin.html', '/katalog.html?v=old&category=passenger']:
+        response = client.get(path, follow_redirects=False)
+        assert response.status_code == 307
+        assert response.headers['cache-control'] == 'no-store'
+        target = response.headers['location']
+        assert 'v=20261015-brand2' in target
+        if 'id=2' in path:
+            assert 'id=2' in target
+        if 'category=' in path:
+            assert path.split('category=')[1].split('&')[0] in target
+        current = client.get(target, follow_redirects=False)
+        assert current.status_code == 200
+        assert current.headers['cache-control'] == 'no-store'
+        assert 'theme.js?v=20261015-brand2' in current.text
+    assert client.get('/healthz', follow_redirects=False).status_code == 200
