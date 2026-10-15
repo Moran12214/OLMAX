@@ -144,6 +144,8 @@ async def security_headers(request, call_next):
         'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
         'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
     })
+    if request.url.path == '/' or request.url.path.endswith('.html'):
+        response.headers['Cache-Control'] = 'no-cache'
     if request.url.path.startswith('/api/admin') or request.url.path == '/admin.html':
         response.headers['Cache-Control'] = 'no-store'
         response.headers['X-Robots-Tag'] = 'noindex, nofollow'

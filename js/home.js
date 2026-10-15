@@ -20,7 +20,7 @@ document.querySelector('main').innerHTML = `
     <p class="image-note" data-t="illustrationNote"></p>
   </section>
   <section class="home-offer container" aria-labelledby="offer-title"><div class="section-heading" id="offer-heading"><h2 id="offer-title" data-t="latest"></h2><a class="text-link" href="/katalog.html" data-t="all"></a></div><div class="car-grid" id="latest-cars" aria-live="polite"><p data-t="loading"></p></div></section>
-  <section class="contact-banner" id="about"><div class="container contact-banner-inner"><div><p class="eyebrow">OLMAX · KAMPINOS</p><h2 data-t="contactBanner"></h2><p data-t="visitText"></p><a class="contact-banner-phone" id="home-phone" href="tel:+48694219020">${homeIcon('phone')}<span>Roman · +48 694 219 020</span></a><a class="button ghost" href="/kontakt.html" data-t="contact"></a></div><img class="contact-banner-logo" src="/assets/logo-light.svg" width="330" height="74" alt="OLMAX"></div></section>`;
+  <section class="contact-banner" id="about"><div class="container contact-banner-inner"><div><p class="eyebrow">OLMAX · KAMPINOS</p><h2 data-t="contactBanner"></h2><p data-t="visitText"></p><a class="contact-banner-phone" id="home-phone" href="tel:+48694219020">${homeIcon('phone')}<span>Roman · +48 694 219 020</span></a><a class="button ghost" href="/kontakt.html" data-t="contact"></a></div><img class="contact-banner-logo" src="/assets/emblem-v2-light.svg" width="240" height="240" alt="OLMAX"></div></section>`;
 let homeCars = [];
 let homeLoadFailed = false;
 function drawHome() {

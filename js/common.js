@@ -1,8 +1,6 @@
-let theme = 'light';
-try { theme = localStorage.getItem('olmaxTheme') === 'dark' ? 'dark' : 'light'; } catch {}
-document.documentElement.dataset.theme = theme;
+let theme = window.olmaxTheme.read();
 function applyTheme() {
-  document.documentElement.dataset.theme = theme;
+  theme = window.olmaxTheme.apply(window.olmaxTheme.read());
   const button = document.getElementById('theme-toggle');
   if (button) {
     button.textContent = theme === 'dark' ? '☀' : '☾';
@@ -11,9 +9,10 @@ function applyTheme() {
     button.setAttribute('aria-pressed', String(theme === 'dark'));
   }
   const logo = document.querySelector('header .brand img');
-  if (logo) logo.src = theme === 'dark' ? '/assets/logo-light.svg' : '/assets/logo.svg';
+  if (logo) logo.src = theme === 'dark' ? '/assets/wordmark-v2-light.svg' : '/assets/wordmark-v2.svg';
 }
 document.addEventListener('languagechange', applyTheme);
+document.addEventListener('themechange', applyTheme);
 const escapeHTML = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -83,13 +82,13 @@ function installImageFallback(root = document) {
 }
 function header() {
   document.querySelector("header").innerHTML =
-    `<div class="header-inner"><a class="brand" href="/" aria-label="OLMAX"><img src="/assets/logo.svg" alt="OLMAX" width="240" height="54"></a><nav aria-label="Menu"><a href="/" data-t="home"></a><a href="/katalog.html" data-t="catalog"></a><a href="/#about" data-t="about"></a><a href="/kontakt.html" data-t="contact"></a></nav><div class="header-actions"><button id="theme-toggle" class="theme-toggle" type="button"></button><div class="languages" aria-label="Language"><button data-language="pl" aria-label="Polski">PL</button><button data-language="ua" aria-label="Українська">UA</button></div><a class="phone-link" href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.phoneDisplay)}</a></div></div>`;
+    `<div class="header-inner"><a class="brand" href="/" aria-label="OLMAX"><img src="/assets/wordmark-v2.svg" alt="OLMAX" width="240" height="32"></a><nav aria-label="Menu"><a href="/" data-t="home"></a><a href="/katalog.html" data-t="catalog"></a><a href="/#about" data-t="about"></a><a href="/kontakt.html" data-t="contact"></a></nav><div class="header-actions"><button id="theme-toggle" class="theme-toggle" type="button"></button><div class="languages" aria-label="Language"><button data-language="pl" aria-label="Polski">PL</button><button data-language="ua" aria-label="Українська">UA</button></div><a class="phone-link" href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.phoneDisplay)}</a></div></div>`;
   document
     .querySelectorAll("[data-language]")
     .forEach((el) => (el.onclick = () => setLanguage(el.dataset.language)));
   document.getElementById('theme-toggle').onclick = () => {
     theme = theme === 'dark' ? 'light' : 'dark';
-    try { localStorage.setItem('olmaxTheme', theme); } catch {}
+    window.olmaxTheme.save(theme);
     applyTheme();
   };
   applyTheme();
@@ -102,7 +101,7 @@ function header() {
       el.setAttribute("aria-current", "page");
   });
   document.querySelector("footer").innerHTML =
-    `<div class="footer-inner"><div><a class="brand" href="/"><img src="/assets/logo-light.svg" alt="OLMAX" width="240" height="54"></a><p data-t="footer"></p></div><div class="footer-links"><a href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.contact)} · ${escapeHTML(siteConfig.phoneDisplay)}</a><a href="/privacy.html" data-t="privacy"></a><a href="/admin.html" data-t="admin"></a></div></div>`;
+    `<div class="footer-inner"><div><a class="brand" href="/"><img src="/assets/wordmark-v2-light.svg" alt="OLMAX" width="240" height="32"></a><p data-t="footer"></p></div><div class="footer-links"><a href="tel:${escapeHTML(siteConfig.phone)}">${escapeHTML(siteConfig.contact)} · ${escapeHTML(siteConfig.phoneDisplay)}</a><a href="/privacy.html" data-t="privacy"></a><a href="/admin.html" data-t="admin"></a></div></div>`;
   translate();
 }
 function carCard(car) {

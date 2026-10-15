@@ -1126,3 +1126,8 @@ body.gallery-open { overflow:hidden; }
 #car-description { white-space:pre-wrap; overflow-wrap:anywhere; }
 #translation-status:empty { display:none; }
 @media(max-width:600px) { .header-actions { gap:6px; } .theme-toggle { width:32px; height:34px; } }
+
+/* Match the page canvas before and during navigation. */
+html { background:var(--paper); }
+.contact-banner-logo { width:240px; height:auto; }
+[data-theme="dark"] .skip-link { background:#1c2125; color:var(--ink); }
